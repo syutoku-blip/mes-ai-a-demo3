@@ -1,5 +1,5 @@
 /* =========================================================
-   MES-AI-A main.js - FULL
+   MES-AI-A main.js - FINAL (UI fix + Tooltip fix)
 ========================================================= */
 
 /* =========================
@@ -79,67 +79,6 @@ function createPRNG(seedStr) {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
   };
-}
-
-/* =========================
-   Global Tooltip (overflowで切れない)
-   - .has-tip の data-tip を body直下の固定ツールチップで表示
-========================= */
-function initGlobalTooltip(){
-  if(document.getElementById("globalTip")) return;
-
-  const tip = document.createElement("div");
-  tip.id = "globalTip";
-  document.body.appendChild(tip);
-
-  const offset = 14;
-
-  function show(text, x, y){
-    tip.textContent = text;
-    tip.style.display = "block";
-    move(x, y);
-  }
-
-  function move(x, y){
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    tip.style.left = (x + offset) + "px";
-    tip.style.top  = (y + offset) + "px";
-
-    const r = tip.getBoundingClientRect();
-    let nx = x + offset;
-    let ny = y + offset;
-
-    if (r.right > vw - 8) nx = x - r.width - offset;
-    if (r.bottom > vh - 8) ny = y - r.height - offset;
-
-    tip.style.left = Math.max(8, nx) + "px";
-    tip.style.top  = Math.max(8, ny) + "px";
-  }
-
-  function hide(){
-    tip.style.display = "none";
-  }
-
-  document.addEventListener("mouseover", (e) => {
-    const el = e.target.closest?.(".has-tip");
-    if(!el) return;
-    const text = el.getAttribute("data-tip");
-    if(!text) return;
-    show(text, e.clientX, e.clientY);
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if(tip.style.display !== "block") return;
-    move(e.clientX, e.clientY);
-  });
-
-  document.addEventListener("mouseout", (e) => {
-    if(e.target.closest?.(".has-tip")) hide();
-  });
-
-  window.addEventListener("scroll", hide, { passive:true });
 }
 
 /* =========================
@@ -243,10 +182,10 @@ function renderChart(canvasEl, asin) {
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { position: "top", labels: { font: { size: 9 }, boxWidth: 16, boxHeight: 8, padding: 6 } },
+        legend: { position: "top", labels: { font: { size: 10 }, boxWidth: 16, boxHeight: 8, padding: 8 } },
         tooltip: {
-          titleFont: { size: 10 },
-          bodyFont: { size: 10 },
+          titleFont: { size: 11 },
+          bodyFont: { size: 11 },
           callbacks: {
             label: (ctx) => ctx.dataset.yAxisID === "yPrice"
               ? `${ctx.dataset.label}: $${Number(ctx.parsed.y).toFixed(2)}`
@@ -255,10 +194,10 @@ function renderChart(canvasEl, asin) {
         }
       },
       scales: {
-        x: { ticks: { font: { size: 9 }, maxTicksLimit: 10 }, grid: { display: false } },
-        yRank: { reverse: true, ticks: { font: { size: 9 } }, grid: { color: "rgba(0,0,0,0.05)" } },
-        ySeller: { position: "right", ticks: { font: { size: 9 } }, grid: { drawOnChartArea: false } },
-        yPrice: { position: "right", offset: true, ticks: { font: { size: 9 } }, grid: { drawOnChartArea: false } }
+        x: { ticks: { font: { size: 10 }, maxTicksLimit: 10 }, grid: { display: false } },
+        yRank: { reverse: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(0,0,0,0.05)" } },
+        ySeller: { position: "right", ticks: { font: { size: 10 } }, grid: { drawOnChartArea: false } },
+        yPrice: { position: "right", offset: true, ticks: { font: { size: 10 } }, grid: { drawOnChartArea: false } }
       }
     }
   });
@@ -286,68 +225,38 @@ const METRICS_COLLAPSE_KEY = "MES_AI_METRICS_COLLAPSED_V1";
 
 let METRICS_COLLAPSED = localStorage.getItem(METRICS_COLLAPSE_KEY) === "1";
 
-/*
-  ✅ ご指定の項目を全て METRICS_ALL に入れました。
-  - data側のキー名と一致していれば表示されます。
-  - 左枠/真ん中/下段に移すと、プールから減るのは正常です。
-*/
 const METRICS_ALL = [
-  // 利益系
+  { id: "FBA最安値", label: "FBA最安値", sourceKey: "FBA最安値" },
+  { id: "過去3月FBA最安値", label: "過去3ヶ月FBA最安値", sourceKey: "過去3月FBA最安値" },
   { id: "粗利益率予測", label: "粗利益率予測", sourceKey: "粗利益率予測" },
-  { id: "入金額予測", label: "入金額予測", sourceKey: "入金額予測" },
   { id: "粗利益予測", label: "粗利益予測（1個）", sourceKey: "粗利益予測" },
-  { id: "粗利益", label: "粗利益", sourceKey: "粗利益" },
-  { id: "粗利益率", label: "粗利益率", sourceKey: "粗利益率" },
+  { id: "予測30日販売数", label: "予測30日販売数", sourceKey: "予測30日販売数" },
 
-  // 売上/入金
+  { id: "日本最安値", label: "日本最安値", sourceKey: "日本最安値" },
+
+  { id: "30日販売数", label: "30日販売数（実績）", sourceKey: "30日販売数" },
+  { id: "90日販売数", label: "90日販売数（実績）", sourceKey: "90日販売数" },
+  { id: "180日販売数", label: "180日販売数（実績）", sourceKey: "180日販売数" },
+
+  { id: "在庫数", label: "在庫数", sourceKey: "在庫数" },
+  { id: "返品率", label: "返品率", sourceKey: "返品率" },
   { id: "販売額（ドル）", label: "販売額（USD）", sourceKey: "販売額（ドル）" },
   { id: "入金額（円）", label: "入金額（円）", sourceKey: "入金額（円）" },
   { id: "入金額計（円）", label: "入金額計（円）", sourceKey: "入金額計（円）" },
 
-  // 販売数
-  { id: "30日販売数", label: "30日販売数（実績）", sourceKey: "30日販売数" },
-  { id: "90日販売数", label: "90日販売数（実績）", sourceKey: "90日販売数" },
-  { id: "180日販売数", label: "180日販売数（実績）", sourceKey: "180日販売数" },
-  { id: "予測30日販売数", label: "予測30日販売数", sourceKey: "予測30日販売数" },
-
-  // 在庫/指数/ライバル
-  { id: "複数在庫指数45日分", label: "複数在庫指数45日分", sourceKey: "複数在庫指数45日分" },
-  { id: "複数在庫指数60日分", label: "複数在庫指数60日分", sourceKey: "複数在庫指数60日分" },
-  { id: "ライバル偏差1", label: "ライバル偏差1", sourceKey: "ライバル偏差1" },
-  { id: "ライバル偏差2", label: "ライバル偏差2", sourceKey: "ライバル偏差2" },
-  { id: "ライバル増加率", label: "ライバル増加率", sourceKey: "ライバル増加率" },
-  { id: "在庫数", label: "在庫数", sourceKey: "在庫数" },
-  { id: "返品率", label: "返品率", sourceKey: "返品率" },
-
-  // 価格系
-  { id: "過去3月FBA最安値", label: "過去3ヶ月FBA最安値", sourceKey: "過去3月FBA最安値" },
-  { id: "カートボックス価格", label: "カートボックス価格", sourceKey: "カートボックス価格" },
-  { id: "FBA最安値", label: "FBA最安値", sourceKey: "FBA最安値" },
-
-  // 日本側の価格
-  { id: "日本最安値", label: "日本最安値", sourceKey: "日本最安値" },
-  { id: "日本FBA最安値", label: "日本FBA最安値", sourceKey: "日本FBA最安値" },
-  { id: "日本自己発送最安値", label: "日本自己発送最安値", sourceKey: "日本自己発送最安値" },
-
-  // 仕入
   { id: "仕入れ目安単価", label: "仕入れ目安単価", sourceKey: "仕入れ目安単価" },
-  { id: "仕入合計", label: "仕入合計", sourceKey: "仕入合計" },
-  { id: "仕入計", label: "仕入計", sourceKey: "仕入計" },
-
-  // 物流
-  { id: "請求重量", label: "請求重量", sourceKey: "請求重量" },
   { id: "想定送料", label: "想定送料", sourceKey: "想定送料" },
   { id: "送料", label: "送料", sourceKey: "送料" },
   { id: "関税", label: "関税", sourceKey: "関税" }
 ];
 
 const DEFAULT_ZONES = {
-  // 最初は「たくさんプールに居る」状態にしています
-  pool: METRICS_ALL.map(m => m.id),
-
-  // ただし、最初から見たいものは center/table にも配置（重複は sanitizeZones が解消）
+  pool: [
+    "日本最安値","90日販売数","180日販売数",
+    "入金額計（円）","仕入れ目安単価","想定送料","送料","関税"
+  ],
   center: ["FBA最安値","過去3月FBA最安値","粗利益率予測","粗利益予測","予測30日販売数"],
-  table: ["30日販売数","在庫数","返品率","販売額（ドル）","入金額（円）","入金額計（円）","日本最安値"],
+  table: ["30日販売数","在庫数","返品率","販売額（ドル）","入金額（円）"],
   hidden: []
 };
 
@@ -365,11 +274,9 @@ function sanitizeZones(zones){
   const total = z.pool.length + z.center.length + z.table.length + z.hidden.length;
   if (total === 0) return clone(DEFAULT_ZONES);
 
-  // allIds をどこかへ必ず入れる（漏れをプールへ）
   const used = new Set([...z.pool, ...z.center, ...z.table, ...z.hidden]);
   allIds.forEach(id => { if (!used.has(id)) z.pool.push(id); });
 
-  // 重複除去（どこか1箇所にのみ存在）
   const seen = new Set();
   ["pool","center","table","hidden"].forEach(k => {
     z[k] = z[k].filter(id => {
@@ -496,7 +403,7 @@ function renderAllZones(){
 }
 
 /* =========================
-   Sort (multi rules on CENTER metrics)
+   Sort
 ========================= */
 let sortRules = [];
 
@@ -525,7 +432,7 @@ function renderSortUI(){
 
   if (!options.length){
     const div = document.createElement("div");
-    div.style.fontSize = "11px";
+    div.style.fontSize = "12px";
     div.style.color = "#6b7280";
     div.style.fontWeight = "900";
     div.textContent = "真ん中枠に指標がありません。プールから真ん中枠へドラッグするとソートできます。";
@@ -623,14 +530,14 @@ function applyCardSort(){
 }
 
 /* =========================
-   Render Center & Table
+   Render Center & Table（✅日本最安値ツールチップ修正）
 ========================= */
 function buildCenterMetrics(container, data){
   container.innerHTML = "";
   const ids = ZONES.center;
 
   if(!ids.length){
-    container.innerHTML = `<div class="center-row"><div class="label">未設定</div><div class="value">プールからドラッグ</div></div>`;
+    container.innerHTML = `<div class="center-row"><div class="label">未設定</div><div class="value"><span class="value-text">プールからドラッグ</span></div></div>`;
     return;
   }
 
@@ -640,14 +547,12 @@ function buildCenterMetrics(container, data){
 
     const raw = (data && data[m.sourceKey] != null && data[m.sourceKey] !== "") ? data[m.sourceKey] : "－";
 
-    let valueHtml = `${raw}`;
-
-    // ✅ 日本最安値 tooltip（Amazon / 楽天 / yahoo の順で）
+    let valueHtml = `<span class="value-text">${raw}</span>`;
     if (m.id === "日本最安値" && raw !== "－") {
       const a = data["日本最安値_Amazon"] ?? "－";
-      const r = data["日本最安値_楽天"] ?? "－";
       const y = data["日本最安値_yahoo"] ?? "－";
-      valueHtml = `<span class="has-tip" data-tip="Amazon　${a}\n楽天　　　${r}\nyahoo　　${y}">${raw}</span>`;
+      const r = data["日本最安値_楽天"] ?? "－";
+      valueHtml = `<span class="value-text has-tip" data-tip="Amazon　${a}\nyahoo　　${y}\n楽天　　　${r}">${raw}</span>`;
     }
 
     const row = document.createElement("div");
@@ -683,9 +588,9 @@ function buildDetailTable(tableEl, data){
 
     if(col.metricId === "日本最安値" && raw !== "－"){
       const a = data["日本最安値_Amazon"] ?? "－";
-      const r = data["日本最安値_楽天"] ?? "－";
       const y = data["日本最安値_yahoo"] ?? "－";
-      td.innerHTML = `<span class="has-tip" data-tip="Amazon　${a}\n楽天　　　${r}\nyahoo　　${y}">${raw}</span>`;
+      const r = data["日本最安値_楽天"] ?? "－";
+      td.innerHTML = `<span class="has-tip" data-tip="Amazon　${a}\nyahoo　　${y}\n楽天　　　${r}">${raw}</span>`;
     }else{
       td.textContent = raw;
     }
@@ -814,7 +719,6 @@ function createProductCard(asin, data){
     </div>
   `;
 
-  // default inputs from data if available
   const sellInput = card.querySelector(".js-sell");
   const costInput = card.querySelector(".js-cost");
 
@@ -827,7 +731,6 @@ function createProductCard(asin, data){
     if (c) costInput.value = c;
   }
 
-  // remove card
   card.querySelector(".remove").addEventListener("click", () => {
     if(cart.has(asin)){
       cart.delete(asin);
@@ -840,7 +743,6 @@ function createProductCard(asin, data){
     if(cardState.size === 0) emptyState.style.display = "block";
   });
 
-  // add to cart
   card.querySelector(".js-addCart").addEventListener("click", () => {
     const qty = Math.max(1, Number(card.querySelector(".js-qty").value || 1));
     const sellUSD = num(sellInput.value);
@@ -853,14 +755,12 @@ function createProductCard(asin, data){
     updateCartSummary();
   });
 
-  // center/table
   const centerBox = card.querySelector(".js-center");
   buildCenterMetrics(centerBox, data);
 
   const tableEl = card.querySelector(".js-detailTable");
   buildDetailTable(tableEl, data);
 
-  // chart
   const canvas = card.querySelector(".js-chart");
   const chart = renderChart(canvas, asin);
 
@@ -871,7 +771,6 @@ function createProductCard(asin, data){
   chkSP.addEventListener("change", refreshVis);
   updateChartVisibility(chart, true, false);
 
-  // keepa switch
   const btnMes = card.querySelector(".js-btnMes");
   const btnKeepa = card.querySelector(".js-btnKeepa");
   const mesWrap = card.querySelector(".js-mesWrap");
@@ -898,7 +797,6 @@ function createProductCard(asin, data){
   btnMes.addEventListener("click", () => setMode("MES"));
   btnKeepa.addEventListener("click", () => setMode("KEEPA"));
 
-  // store
   cardState.set(asin, { el: card, data, chart, centerBox, tableEl });
   return card;
 }
@@ -1003,8 +901,6 @@ function wireButtons(){
    Boot
 ========================= */
 function bootApp(){
-  initGlobalTooltip(); // ★ 日本最安値のツールチップを確実に表示
-
   attachZoneDrop(metricsPoolZone, "pool");
   attachZoneDrop(metricsCenterZone, "center");
   attachZoneDrop(metricsTableZone, "table");
@@ -1021,7 +917,6 @@ function bootApp(){
   wireButtons();
 }
 
-// DOMContentLoaded済みでも確実に起動
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", bootApp);
 } else {
