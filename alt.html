@@ -2,28 +2,29 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>MES-AI-A 商品分析（レイアウト2）</title>
+  <title>MES-AI-A 商品分析（新レイアウト）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link rel="stylesheet" href="./styles.css?v=20251217_nav1" />
+  <!-- CSS（キャッシュ潰し） -->
+  <link rel="stylesheet" href="./styles.css?v=20251217_1" />
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
+<body class="alt-layout">
 
-<body class="layout2">
 <header class="app-header">
   <div class="header-left">
     <h1>MES-AI-A 商品分析</h1>
     <div class="sub">ASINクリックでカード追加 → 指標プールで表示項目をカスタム</div>
   </div>
 
-  <!-- ★ ページ切替 -->
-  <div class="header-right">
-    <nav class="page-tabs">
-      <a class="tab" href="./index.html">標準</a>
-      <a class="tab active" href="./alt.html">レイアウト2</a>
-    </nav>
-    <div id="headerStatus" class="header-status"></div>
+  <div class="layout-nav">
+    <a class="layout-link " href="./index.html">通常レイアウト</a>
+    <a class="layout-link active" href="./alt.html">新レイアウト</a>
   </div>
+
+  <div id="headerStatus" class="header-status"></div>
 </header>
 
 <main class="page-body">
@@ -47,27 +48,53 @@
       </div>
     </div>
 
-    <div class="metrics-row">
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">プール</div>
-        <div id="metricsPoolZone" class="metrics-zone-list"></div>
+    <div class="metrics-tabs">
+      <button id="metricsTabMetrics" class="metrics-tab active" type="button">指標</button>
+      <button id="metricsTabInfo" class="metrics-tab" type="button">商品情報</button>
+    </div>
+
+    <div id="panelMetrics" class="metrics-panel">
+      <div class="metrics-row">
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">プール</div>
+          <div id="metricsPoolZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">真ん中の枠</div>
+          <div id="metricsCenterZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">下段テーブル</div>
+          <div id="metricsTableZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">非表示</div>
+          <div id="metricsHiddenZone" class="metrics-zone-list"></div>
+        </div>
       </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">真ん中の枠</div>
-        <div id="metricsCenterZone" class="metrics-zone-list"></div>
-      </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">下段テーブル</div>
-        <div id="metricsTableZone" class="metrics-zone-list"></div>
-      </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">非表示</div>
-        <div id="metricsHiddenZone" class="metrics-zone-list"></div>
+    </div>
+
+    <div id="panelInfo" class="metrics-panel" hidden>
+      <div class="metrics-bar-help" style="margin:10px 0 0;">商品情報（左の「商品情報枠」）に表示する項目を、ドラッグで並べ替え・非表示にできます。</div>
+      <div class="metrics-row info-row">
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">プール</div>
+          <div id="infoPoolZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">商品情報枠</div>
+          <div id="infoMainZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">非表示</div>
+          <div id="infoHiddenZone" class="metrics-zone-list"></div>
+        </div>
       </div>
     </div>
 
     <div class="metrics-bar-foot">
       <button id="metricsResetBtn" type="button">初期配置に戻す</button>
+      <button id="infoResetBtn" type="button">商品情報を初期配置に戻す</button>
       <button id="clearCardsBtn" type="button">表示カードをクリア</button>
       <button id="clearCartBtn" type="button">カートを空にする</button>
     </div>
