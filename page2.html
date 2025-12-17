@@ -2,29 +2,28 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>MES-AI-A 商品分析（新レイアウト）</title>
+  <title>MES-AI-A 商品分析（レイアウト2）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- CSS（キャッシュ潰し） -->
-  <link rel="stylesheet" href="./styles.css?v=20251217_1" />
-
-  <!-- Chart.js -->
+  <link rel="stylesheet" href="./styles.css?v=20251217_nav1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
-<body class="alt-layout">
 
+<body class="layout2">
 <header class="app-header">
   <div class="header-left">
     <h1>MES-AI-A 商品分析</h1>
     <div class="sub">ASINクリックでカード追加 → 指標プールで表示項目をカスタム</div>
   </div>
 
-  <div class="layout-nav">
-    <a class="layout-link " href="./index.html">通常レイアウト</a>
-    <a class="layout-link active" href="./alt.html">新レイアウト</a>
+  <!-- ★ ページ切替 -->
+  <div class="header-right">
+    <nav class="page-tabs">
+      <a class="tab" href="./index.html">標準</a>
+      <a class="tab active" href="./page2.html">レイアウト2</a>
+    </nav>
+    <div id="headerStatus" class="header-status"></div>
   </div>
-
-  <div id="headerStatus" class="header-status"></div>
 </header>
 
 <main class="page-body">
