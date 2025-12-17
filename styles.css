@@ -131,16 +131,27 @@ button{ font-family:inherit; }
   font-weight:800;
 }
 
-.section-title{
-  margin-top:14px;
-  padding-top:12px;
-  border-top:1px dashed var(--line);
-  font-size:12px;
+/* tabs */
+.pool-tabs{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.pool-tab{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:999px;
+  padding:8px 12px;
+  cursor:pointer;
   font-weight:1000;
-  color:#111827;
+  font-size:12px;
+}
+.pool-tab.active{
+  border-color:#c7d2fe;
+  background:var(--pill);
+  color:#1d4ed8;
 }
 
-/* ✅ 5枠 */
 .metrics-row{
   margin-top:12px;
   display:grid;
@@ -197,15 +208,15 @@ button{ font-family:inherit; }
 }
 
 /* collapsed */
-#metricsBar.collapsed .sort-bar,
+#metricsBar.collapsed #sortBar,
 #metricsBar.collapsed .metrics-row,
 #metricsBar.collapsed .metrics-bar-foot,
-#metricsBar.collapsed .section-title{
+#metricsBar.collapsed .pool-tabs{
   display:none;
 }
 
 /* sort UI */
-.sort-bar{
+#sortBar{
   margin-top:12px;
   border-top:1px solid var(--line);
   padding-top:12px;
@@ -459,15 +470,6 @@ button{ font-family:inherit; }
   gap:10px;
   min-width:0;
 }
-.info-title{
-  font-size:14px;
-  font-weight:1000;
-  line-height:1.25;
-  margin:0;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
 .info-grid{
   display:grid;
   grid-template-columns: 140px 1fr;
@@ -503,7 +505,7 @@ button{ font-family:inherit; }
   align-items:center;
 }
 
-/* ✅ 商品情報枠に出す「指標」 */
+/* ✅ 指標を商品情報枠に出すチップ */
 .info-metrics{
   display:flex;
   flex-wrap:wrap;
@@ -522,12 +524,30 @@ button{ font-family:inherit; }
   min-width: 160px;
   max-width: 100%;
 }
-.info-metric-chip .k{
-  font-size:11px;
+.info-metric-chip .k{ font-size:11px; }
+.info-metric-chip .v{ font-size:13px; }
+
+/* ✅ 商品情報項目のチップ段（任意） */
+.info-field-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding-top:10px;
+  border-top:1px dashed var(--line);
 }
-.info-metric-chip .v{
-  font-size:13px;
+.info-field-chip{
+  border:1px solid var(--line);
+  background:#fbfdff;
+  border-radius:14px;
+  padding:8px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width: 160px;
+  max-width: 100%;
 }
+.info-field-chip .k{ font-size:11px; }
+.info-field-chip .v{ font-size:13px; }
 
 /* tags */
 .tag{
@@ -672,8 +692,6 @@ button{ font-family:inherit; }
   color:#111827;
   margin-bottom:10px;
 }
-
-/* 通常レイアウトのグラフ領域 */
 .graph-body{
   flex:1;
   min-height:360px;
@@ -758,8 +776,6 @@ body.alt-layout .alt-grid{
   row-gap:0;
   align-items:start;
 }
-
-/* 左列：画像と商品情報の間の空白を詰める */
 body.alt-layout .alt-left{
   grid-column:1;
   grid-row:1 / span 2;
@@ -785,7 +801,6 @@ body.alt-layout .alt-center{ grid-column:2; grid-row:1; }
 body.alt-layout .alt-graph{ grid-column:3; grid-row:1 / span 2; }
 body.alt-layout .alt-buy{ grid-column:4; grid-row:1; }
 
-/* buy box */
 body.alt-layout .buy-box{
   border:1px solid var(--line);
   border-radius:var(--radius2);
@@ -839,7 +854,6 @@ body.alt-layout .keepa-wrap iframe{
   border:0;
 }
 
-/* Responsive for alt */
 @media (max-width: 1100px){
   body.alt-layout .alt-grid{
     grid-template-columns: 1fr;
