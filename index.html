@@ -5,7 +5,7 @@
   <title>MES-AI-A 商品分析</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link rel="stylesheet" href="./styles.css?v=20251217_3" />
+  <link rel="stylesheet" href="./styles.css?v=20251217_4" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
 <body>
@@ -28,13 +28,19 @@
   <section class="metrics-bar card" id="metricsBar">
     <div class="metrics-bar-head">
       <div>
-        <div class="metrics-bar-title">指標プール（ドラッグして配置）</div>
+        <div class="metrics-bar-title">配置カスタマイズ（ドラッグして配置）</div>
         <div class="metrics-bar-help">同じ項目はどこか1枠のみ（重複配置できません）</div>
+
+        <div class="pool-tabs">
+          <button id="tabMetricBtn" class="pool-tab active" type="button">指標</button>
+          <button id="tabInfoBtn" class="pool-tab" type="button">商品情報</button>
+        </div>
       </div>
       <button id="metricsCollapseBtn" class="ghost-btn" type="button">折りたたむ</button>
     </div>
 
-    <div class="sort-bar">
+    <!-- sort（指標タブのみ表示） -->
+    <div id="sortBar">
       <div class="sort-title">表示中ASINのソート（真ん中の枠の指標）</div>
       <div id="sortControls" class="sort-controls"></div>
       <div class="sort-actions">
@@ -44,7 +50,7 @@
       </div>
     </div>
 
-    <!-- ✅ 指標：5枠（プール / 商品情報 / 真ん中 / 下段 / 非表示） -->
+    <!-- ✅ 上の5枠のみ -->
     <div class="metrics-row">
       <div class="metrics-zone">
         <div class="metrics-zone-title">プール</div>
@@ -68,30 +74,8 @@
       </div>
     </div>
 
-    <!-- 商品情報（項目）カスタムは下に残す（必要なら後で消せます） -->
-    <div class="section-title">商品情報（表示項目のカスタマイズ）</div>
-    <div class="metrics-row" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">プール</div>
-        <div id="infoPoolZone" class="metrics-zone-list"></div>
-      </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">真ん中の枠</div>
-        <div id="infoCenterZone" class="metrics-zone-list"></div>
-      </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">下段テーブル</div>
-        <div id="infoTableZone" class="metrics-zone-list"></div>
-      </div>
-      <div class="metrics-zone">
-        <div class="metrics-zone-title">非表示</div>
-        <div id="infoHiddenZone" class="metrics-zone-list"></div>
-      </div>
-    </div>
-
     <div class="metrics-bar-foot">
-      <button id="metricsResetBtn" type="button">指標を初期配置に戻す</button>
-      <button id="infoResetBtn" type="button">商品情報を初期配置に戻す</button>
+      <button id="resetCurrentBtn" type="button">今のタブを初期配置に戻す</button>
       <button id="clearCardsBtn" type="button">表示カードをクリア</button>
       <button id="clearCartBtn" type="button">カートを空にする</button>
     </div>
