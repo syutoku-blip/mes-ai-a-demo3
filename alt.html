@@ -5,10 +5,7 @@
   <title>MES-AI-A 商品分析（新レイアウト）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- CSS（キャッシュ潰し） -->
-  <link rel="stylesheet" href="./styles.css?v=20251217_1" />
-
-  <!-- Chart.js -->
+  <link rel="stylesheet" href="./styles.css?v=20251217_2" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
 <body class="alt-layout">
@@ -16,11 +13,11 @@
 <header class="app-header">
   <div class="header-left">
     <h1>MES-AI-A 商品分析</h1>
-    <div class="sub">ASINクリックでカード追加 → 指標プールで表示項目をカスタム</div>
+    <div class="sub">ASINクリックでカード追加 → 指標/商品情報の表示項目をカスタム</div>
   </div>
 
   <div class="layout-nav">
-    <a class="layout-link " href="./index.html">通常レイアウト</a>
+    <a class="layout-link" href="./index.html">通常レイアウト</a>
     <a class="layout-link active" href="./alt.html">新レイアウト</a>
   </div>
 
@@ -28,18 +25,17 @@
 </header>
 
 <main class="page-body">
-  <!-- 指標プール -->
   <section class="metrics-bar card" id="metricsBar">
     <div class="metrics-bar-head">
       <div>
         <div class="metrics-bar-title">指標プール（ドラッグして配置）</div>
-        <div class="metrics-bar-help">プール → 真ん中枠 / 下段テーブル / 非表示 に移動できます（同じ指標はどちらか片方のみ）</div>
+        <div class="metrics-bar-help">同じ項目はどこか1枠のみ（重複配置できません）</div>
       </div>
       <button id="metricsCollapseBtn" class="ghost-btn" type="button">折りたたむ</button>
     </div>
 
     <div class="sort-bar">
-      <div class="sort-title">表示中ASINのソート（真ん中枠の指標）</div>
+      <div class="sort-title">表示中ASINのソート（真ん中の枠の指標）</div>
       <div id="sortControls" class="sort-controls"></div>
       <div class="sort-actions">
         <button id="addSortRuleBtn" type="button">条件を追加</button>
@@ -75,15 +71,18 @@
     </div>
 
     <div id="panelInfo" class="metrics-panel" hidden>
-      <div class="metrics-bar-help" style="margin:10px 0 0;">商品情報（左の「商品情報枠」）に表示する項目を、ドラッグで並べ替え・非表示にできます。</div>
-      <div class="metrics-row info-row">
+      <div class="metrics-row">
         <div class="metrics-zone">
           <div class="metrics-zone-title">プール</div>
           <div id="infoPoolZone" class="metrics-zone-list"></div>
         </div>
         <div class="metrics-zone">
-          <div class="metrics-zone-title">商品情報枠</div>
-          <div id="infoMainZone" class="metrics-zone-list"></div>
+          <div class="metrics-zone-title">真ん中の枠</div>
+          <div id="infoCenterZone" class="metrics-zone-list"></div>
+        </div>
+        <div class="metrics-zone">
+          <div class="metrics-zone-title">下段テーブル</div>
+          <div id="infoTableZone" class="metrics-zone-list"></div>
         </div>
         <div class="metrics-zone">
           <div class="metrics-zone-title">非表示</div>
@@ -93,22 +92,20 @@
     </div>
 
     <div class="metrics-bar-foot">
-      <button id="metricsResetBtn" type="button">初期配置に戻す</button>
+      <button id="metricsResetBtn" type="button">指標を初期配置に戻す</button>
       <button id="infoResetBtn" type="button">商品情報を初期配置に戻す</button>
       <button id="clearCardsBtn" type="button">表示カードをクリア</button>
       <button id="clearCartBtn" type="button">カートを空にする</button>
     </div>
   </section>
 
-  <!-- ASIN一覧 -->
   <section class="asin-catalog card">
     <div class="asin-catalog-head">
-      <div class="asin-catalog-title">データがあるASIN（クリックで検索/表示）</div>
+      <div class="asin-catalog-title">データがあるASIN（クリックで表示）</div>
     </div>
     <div class="asin-catalog-body" id="asinCatalog"></div>
   </section>
 
-  <!-- カート（sticky） -->
   <section id="cartSummary" class="cart-summary card">
     <div class="cart-head">
       <div class="card-title">カート</div>
