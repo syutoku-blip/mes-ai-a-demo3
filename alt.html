@@ -5,7 +5,7 @@
   <title>MES-AI-A 商品分析（新レイアウト）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link rel="stylesheet" href="./styles.css?v=20251217_2" />
+  <link rel="stylesheet" href="./styles.css?v=20251217_3" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
 <body class="alt-layout">
@@ -44,50 +44,47 @@
       </div>
     </div>
 
-    <div class="metrics-tabs">
-      <button id="metricsTabMetrics" class="metrics-tab active" type="button">指標</button>
-      <button id="metricsTabInfo" class="metrics-tab" type="button">商品情報</button>
-    </div>
-
-    <div id="panelMetrics" class="metrics-panel">
-      <div class="metrics-row">
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">プール</div>
-          <div id="metricsPoolZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">真ん中の枠</div>
-          <div id="metricsCenterZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">下段テーブル</div>
-          <div id="metricsTableZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">非表示</div>
-          <div id="metricsHiddenZone" class="metrics-zone-list"></div>
-        </div>
+    <!-- ✅ 指標：5枠 -->
+    <div class="metrics-row">
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">プール</div>
+        <div id="metricsPoolZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">商品情報</div>
+        <div id="metricsInfoZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">真ん中の枠</div>
+        <div id="metricsCenterZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">下段テーブル</div>
+        <div id="metricsTableZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">非表示</div>
+        <div id="metricsHiddenZone" class="metrics-zone-list"></div>
       </div>
     </div>
 
-    <div id="panelInfo" class="metrics-panel" hidden>
-      <div class="metrics-row">
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">プール</div>
-          <div id="infoPoolZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">真ん中の枠</div>
-          <div id="infoCenterZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">下段テーブル</div>
-          <div id="infoTableZone" class="metrics-zone-list"></div>
-        </div>
-        <div class="metrics-zone">
-          <div class="metrics-zone-title">非表示</div>
-          <div id="infoHiddenZone" class="metrics-zone-list"></div>
-        </div>
+    <div class="section-title">商品情報（表示項目のカスタマイズ）</div>
+    <div class="metrics-row" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">プール</div>
+        <div id="infoPoolZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">真ん中の枠</div>
+        <div id="infoCenterZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">下段テーブル</div>
+        <div id="infoTableZone" class="metrics-zone-list"></div>
+      </div>
+      <div class="metrics-zone">
+        <div class="metrics-zone-title">非表示</div>
+        <div id="infoHiddenZone" class="metrics-zone-list"></div>
       </div>
     </div>
 
