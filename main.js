@@ -1,8 +1,8 @@
 /**************************************************************
  * main.js
- * - 指標: プール / 真ん中 / 下段 / 非表示（重複不可）
- * - ✅商品情報: 画像と同じ4枠に変更（重複不可）
- * - ✅商品情報の値は横スクロールで閲覧（CSS側）
+ * - 指標: ✅プール / ✅商品情報 / ✅真ん中 / ✅下段 / ✅非表示（重複不可）
+ * - 商品情報(項目)カスタム: プール / 真ん中 / 下段 / 非表示（重複不可）
+ * - 商品情報枠の値は横スクロール（CSS側）
  **************************************************************/
 
 const $ = (sel, root=document) => root.querySelector(sel);
@@ -63,26 +63,31 @@ const METRICS_ALL = [
 const METRIC_BY_ID = Object.fromEntries(METRICS_ALL.map(m => [m.id, m]));
 
 /* =========================
-   ✅ 商品情報（候補）
+   ✅ 商品情報（項目）候補
+   （ユーザーが言ってる「商品情報枠」の項目）
 ========================= */
 const INFO_FIELDS_ALL = [
+  { id:"商品名", label:"商品名", kind:"computedTitle" },
   { id:"ブランド", label:"ブランド", kind:"text" },
   { id:"評価", label:"評価", kind:"text", sourceKey:"レビュー評価" },
-  { id:"ASIN", label:"ASIN", kind:"computed" },
+
   { id:"各種ASIN", label:"各種ASIN", kind:"computed" },
   { id:"JAN", label:"JAN", kind:"text" },
   { id:"SKU", label:"SKU", kind:"text" },
+
   { id:"サイズ", label:"サイズ", kind:"computed" },
   { id:"重量（容積重量）", label:"重量（容積重量）", kind:"computed" },
-  { id:"材質", label:"材質", kind:"text" },
+
   { id:"カテゴリ", label:"カテゴリ", kind:"computed" },
   { id:"注意事項", label:"注意事項", kind:"computedTags" },
+  { id:"材質", label:"材質", kind:"text" },
 ];
 
 const INFO_BY_ID = Object.fromEntries(INFO_FIELDS_ALL.map(f => [f.id, f]));
 
 /* =========================
    初期配置（指標）
+   ✅ 5枠: pool / info / center / table / hidden
 ========================= */
 const DEFAULT_ZONES = {
   pool: [
@@ -91,6 +96,10 @@ const DEFAULT_ZONES = {
     "販売額（ドル）","入金額（円）","入金額計（円）",
     "仕入れ目安単価","想定送料","送料","関税",
     "粗利益","粗利益率","日本最安値"
+  ],
+  info: [
+    // ✅「商品情報枠」に出したい指標（初期例）
+    "想定送料","送料","関税"
   ],
   center: [
     "過去3月FBA最安値","FBA最安値",
@@ -106,19 +115,19 @@ const DEFAULT_ZONES = {
 
 const zoneState = {
   pool: [...DEFAULT_ZONES.pool],
+  info: [...DEFAULT_ZONES.info],
   center: [...DEFAULT_ZONES.center],
   table: [...DEFAULT_ZONES.table],
   hidden: [...DEFAULT_ZONES.hidden],
 };
 
 /* =========================
-   ✅ 初期配置（商品情報）— 画像と同じ4枠
-   ※重複不可（移動時に全枠から除去）
+   商品情報（項目）の初期配置（4枠）
 ========================= */
 const DEFAULT_INFO_ZONES = {
-  pool: ["ブランド","評価","ASIN","各種ASIN","JAN","SKU","サイズ","重量（容積重量）","材質","カテゴリ","注意事項"],
-  center: ["ブランド","評価","各種ASIN","JAN","SKU","サイズ","重量（容積重量）","カテゴリ"],
-  table: ["注意事項","材質","ASIN"],
+  pool: ["商品名","ブランド","評価","各種ASIN","JAN","SKU","サイズ","重量（容積重量）","カテゴリ","注意事項","材質"],
+  center: ["ブランド","評価","各種ASIN","JAN","SKU","サイズ","重量（容積重量）","カテゴリ","材質"],
+  table: ["注意事項"],
   hidden: []
 };
 
@@ -135,15 +144,17 @@ const cart = new Map();
 /* ===== DOM refs ===== */
 const metricsBar = $("#metricsBar");
 
-const metricsPoolZone = $("#metricsPoolZone");
+/* 指標 5枠 */
+const metricsPoolZone   = $("#metricsPoolZone");
+const metricsInfoZone   = $("#metricsInfoZone");
 const metricsCenterZone = $("#metricsCenterZone");
-const metricsTableZone = $("#metricsTableZone");
+const metricsTableZone  = $("#metricsTableZone");
 const metricsHiddenZone = $("#metricsHiddenZone");
 
-/* ✅ 商品情報の4枠 */
-const infoPoolZone = $("#infoPoolZone");
+/* 商品情報(項目) 4枠 */
+const infoPoolZone   = $("#infoPoolZone");
 const infoCenterZone = $("#infoCenterZone");
-const infoTableZone = $("#infoTableZone");
+const infoTableZone  = $("#infoTableZone");
 const infoHiddenZone = $("#infoHiddenZone");
 
 const metricsCollapseBtn = $("#metricsCollapseBtn");
@@ -171,12 +182,6 @@ const applySortBtn = $("#applySortBtn");
 const clearSortBtn = $("#clearSortBtn");
 let sortRules = [];
 
-/* tabs */
-const metricsTabMetrics = $("#metricsTabMetrics");
-const metricsTabInfo = $("#metricsTabInfo");
-const panelMetrics = $("#panelMetrics");
-const panelInfo = $("#panelInfo");
-
 init();
 
 function init(){
@@ -196,6 +201,7 @@ function initActions(){
 
   metricsResetBtn?.addEventListener("click", () => {
     zoneState.pool = [...DEFAULT_ZONES.pool];
+    zoneState.info = [...DEFAULT_ZONES.info];
     zoneState.center = [...DEFAULT_ZONES.center];
     zoneState.table = [...DEFAULT_ZONES.table];
     zoneState.hidden = [...DEFAULT_ZONES.hidden];
@@ -227,19 +233,6 @@ function initActions(){
     cart.clear();
     updateCartSummary();
   });
-
-  /* tabs */
-  const setTab = (tab) => {
-    if(!panelMetrics || !panelInfo) return;
-    const isMetrics = tab === "metrics";
-    panelMetrics.hidden = !isMetrics;
-    panelInfo.hidden = isMetrics;
-    metricsTabMetrics?.classList.toggle("active", isMetrics);
-    metricsTabInfo?.classList.toggle("active", !isMetrics);
-  };
-  metricsTabMetrics?.addEventListener("click", () => setTab("metrics"));
-  metricsTabInfo?.addEventListener("click", () => setTab("info"));
-  setTab("metrics");
 }
 
 function initCatalog(){
@@ -281,16 +274,17 @@ function updateHeaderStatus(){
 }
 
 /* =========================
-   指標プール（従来）
+   指標プール（✅5枠）
 ========================= */
 function initMetricsBar(){
   renderMetricsZones();
-  attachZoneDnD(metricsPoolZone, { zoneKey:"pool", accept:"metric" });
+  attachZoneDnD(metricsPoolZone,   { zoneKey:"pool",   accept:"metric" });
+  attachZoneDnD(metricsInfoZone,   { zoneKey:"info",   accept:"metric" }); // ✅商品情報
   attachZoneDnD(metricsCenterZone, { zoneKey:"center", accept:"metric" });
-  attachZoneDnD(metricsTableZone, { zoneKey:"table", accept:"metric" });
+  attachZoneDnD(metricsTableZone,  { zoneKey:"table",  accept:"metric" });
   attachZoneDnD(metricsHiddenZone, { zoneKey:"hidden", accept:"metric" });
 
-  /* ✅ 商品情報 4枠 */
+  /* 商品情報（項目）4枠 */
   renderInfoZones();
   attachZoneDnD(infoPoolZone,   { zoneKey:"pool",   accept:"info" });
   attachZoneDnD(infoCenterZone, { zoneKey:"center", accept:"info" });
@@ -300,6 +294,7 @@ function initMetricsBar(){
 
 function renderMetricsZones(){
   renderMetricZone(metricsPoolZone, zoneState.pool);
+  renderMetricZone(metricsInfoZone, zoneState.info);   // ✅商品情報
   renderMetricZone(metricsCenterZone, zoneState.center);
   renderMetricZone(metricsTableZone, zoneState.table);
   renderMetricZone(metricsHiddenZone, zoneState.hidden);
@@ -328,8 +323,9 @@ function renderMetricZone(zoneEl, list){
   });
 }
 
+/* ✅重複不可：移動時に全枠から除去→移動先へ */
 function moveMetricToZone(metricId, toZone){
-  for(const z of ["pool","center","table","hidden"]){
+  for(const z of ["pool","info","center","table","hidden"]){
     const idx = zoneState[z].indexOf(metricId);
     if(idx >= 0) zoneState[z].splice(idx, 1);
   }
@@ -340,7 +336,7 @@ function moveMetricToZone(metricId, toZone){
 }
 
 /* =========================
-   ✅ 商品情報プール（4枠）
+   ✅ 商品情報(項目)プール（4枠）
 ========================= */
 function renderInfoZones(){
   renderInfoZone(infoPoolZone, infoZoneState.pool);
@@ -371,7 +367,7 @@ function renderInfoZone(zoneEl, list){
   });
 }
 
-/* ✅ 重複不可：移動時に全枠から除去 → 移動先へ1回だけ追加 */
+/* ✅重複不可：移動時に全枠から除去→移動先へ */
 function moveInfoToZone(infoId, toZone){
   for(const z of ["pool","center","table","hidden"]){
     const idx = infoZoneState[z].indexOf(infoId);
@@ -407,7 +403,7 @@ function attachZoneDnD(zoneEl, { zoneKey, accept }){
 }
 
 /* =========================
-   Sort（従来）
+   Sort（中心枠の指標でソート）
 ========================= */
 function initSortUI(){
   sortRules = [];
@@ -502,7 +498,7 @@ function applySort(){
 }
 
 /* =========================
-   描画（カード）
+   描画（指標）
 ========================= */
 function buildCenterMetrics(container, data){
   container.innerHTML = "";
@@ -540,6 +536,31 @@ function buildDetailTable(tableEl, data){
   });
 }
 
+/* ✅ 指標を「商品情報枠」に表示する領域 */
+function buildInfoMetrics(container, data){
+  if(!container) return;
+  container.innerHTML = "";
+
+  if(zoneState.info.length === 0){
+    container.style.display = "none";
+    return;
+  }
+  container.style.display = "flex";
+
+  zoneState.info.forEach(id => {
+    const m = METRIC_BY_ID[id];
+    if(!m) return;
+
+    const chip = document.createElement("div");
+    chip.className = "info-metric-chip";
+    chip.innerHTML = `
+      <div class="k">${m.label}</div>
+      <div class="v info-scroll">${data[m.sourceKey] ?? "－"}</div>
+    `;
+    container.appendChild(chip);
+  });
+}
+
 function renderWarningTags(str){
   const s = (str || "").toString();
   const parts = s.split(/[,\s、]+/).map(x => x.trim()).filter(Boolean);
@@ -554,7 +575,9 @@ function renderWarningTags(str){
   }).join("");
 }
 
-/* ✅ 商品情報：値の解決（computed含む） */
+/* =========================
+   商品情報（値の解決）
+========================= */
 function resolveInfoValue(id, ctx){
   const f = INFO_BY_ID[id];
   if(!f) return { type:"text", text:"－" };
@@ -562,7 +585,7 @@ function resolveInfoValue(id, ctx){
   const { asin, jpAsin, usAsin, size, weight, data } = ctx;
 
   const computed = {
-    "ASIN": asin,
+    "商品名": data["品名"] || "－",
     "各種ASIN": `日本: ${jpAsin} / US: ${usAsin}`,
     "サイズ": size,
     "重量（容積重量）": weight,
@@ -573,25 +596,28 @@ function resolveInfoValue(id, ctx){
   if(f.kind === "computedTags"){
     return { type:"tags", html: computed[id] || "－" };
   }
-  if(f.kind === "computed"){
+  if(f.kind === "computed" || f.kind === "computedTitle"){
     return { type:"text", text: computed[id] || "－" };
   }
+
   const sourceKey = f.sourceKey || f.id;
   return { type:"text", text: (data[sourceKey] ?? "－") };
 }
 
-/* ✅ 商品情報：真ん中の枠（grid） */
 function buildInfoCenterGrid(gridEl, ctx){
   if(!gridEl) return;
   gridEl.innerHTML = "";
 
-  infoZoneState.center.forEach(id => {
+  // 商品名は見出しで出すので、grid側では除外（置きたい場合はここを外してOK）
+  const list = infoZoneState.center.filter(x => x !== "商品名");
+
+  list.forEach(id => {
     const k = document.createElement("div");
     k.className = "k";
     k.textContent = INFO_BY_ID[id]?.label || id;
 
     const v = document.createElement("div");
-    v.className = "v info-scroll"; // ✅横スクロール
+    v.className = "v info-scroll";
 
     const rv = resolveInfoValue(id, ctx);
     if(rv.type === "tags"){
@@ -606,7 +632,6 @@ function buildInfoCenterGrid(gridEl, ctx){
   });
 }
 
-/* ✅ 商品情報：下段テーブル（横スクロールtable） */
 function buildInfoTable(tableEl, ctx){
   if(!tableEl) return;
 
@@ -629,7 +654,7 @@ function buildInfoTable(tableEl, ctx){
       td.innerHTML = rv.html;
     }else{
       const span = document.createElement("div");
-      span.className = "info-td-scroll"; // ✅横スクロール
+      span.className = "info-td-scroll";
       span.textContent = rv.text;
       td.appendChild(span);
     }
@@ -637,7 +662,6 @@ function buildInfoTable(tableEl, ctx){
     tbodyRow.appendChild(td);
   });
 
-  // 下段が空なら非表示（見た目すっきり）
   const wrap = tableEl.closest(".info-table-wrap");
   if(wrap){
     wrap.style.display = infoZoneState.table.length ? "block" : "none";
@@ -651,24 +675,29 @@ function rerenderAllCards(){
     if(center) buildCenterMetrics(center, v.data);
     if(table) buildDetailTable(table, v.data);
 
-    // ✅商品情報（center + table）
+    const asin = v.el.dataset.asin;
+    const jpAsin = v.data["日本ASIN"] || "－";
+    const usAsin = v.data["アメリカASIN"] || asin || "－";
+    const realW = v.data["重量kg"] ?? v.data["重量（kg）"] ?? v.data["重量"] ?? "";
+    const volW  = v.data["容積重量"] ?? "";
+    const size  = v.data["サイズ"] || "－";
+    const weight = `${fmtKg(realW)}（${fmtKg(volW)}）`;
+
+    const ctx = { asin, jpAsin, usAsin, size, weight, data: v.data };
+
+    const infoTitle = v.el.querySelector(".js-infoTitle");
+    if(infoTitle){
+      infoTitle.textContent = v.data["品名"] || "－";
+    }
+
     const infoCenterGrid = v.el.querySelector(".js-infoCenterGrid");
     const infoTable = v.el.querySelector(".js-infoTable");
+    if(infoCenterGrid) buildInfoCenterGrid(infoCenterGrid, ctx);
+    if(infoTable) buildInfoTable(infoTable, ctx);
 
-    if(infoCenterGrid || infoTable){
-      const asin = v.el.dataset.asin;
-      const jpAsin = v.data["日本ASIN"] || "－";
-      const usAsin = v.data["アメリカASIN"] || asin || "－";
-      const realW = v.data["重量kg"] ?? v.data["重量（kg）"] ?? v.data["重量"] ?? "";
-      const volW  = v.data["容積重量"] ?? "";
-      const size  = v.data["サイズ"] || "－";
-      const weight = `${fmtKg(realW)}（${fmtKg(volW)}）`;
-
-      const ctx = { asin, jpAsin, usAsin, size, weight, data: v.data };
-
-      if(infoCenterGrid) buildInfoCenterGrid(infoCenterGrid, ctx);
-      if(infoTable) buildInfoTable(infoTable, ctx);
-    }
+    // ✅商品情報枠に出す「指標」
+    const infoMetrics = v.el.querySelector(".js-infoMetrics");
+    if(infoMetrics) buildInfoMetrics(infoMetrics, v.data);
   });
 }
 
@@ -767,9 +796,12 @@ function createProductCard(asin, data){
         </div>
 
         <div class="alt-info info-box">
-          <h3 class="info-title">${data["品名"] || "－"}</h3>
+          <h3 class="info-title js-infoTitle">${data["品名"] || "－"}</h3>
 
           <div class="info-grid js-infoCenterGrid"></div>
+
+          <!-- ✅ 指標(商品情報枠) -->
+          <div class="info-metrics js-infoMetrics"></div>
 
           <div class="info-table-wrap">
             <div class="info-table-title">商品情報（下段）</div>
@@ -872,9 +904,12 @@ function createProductCard(asin, data){
         </div>
 
         <div class="info-box">
-          <h3 class="info-title">${data["品名"] || "－"}</h3>
+          <h3 class="info-title js-infoTitle">${data["品名"] || "－"}</h3>
 
           <div class="info-grid js-infoCenterGrid"></div>
+
+          <!-- ✅ 指標(商品情報枠) -->
+          <div class="info-metrics js-infoMetrics"></div>
 
           <div class="info-table-wrap">
             <div class="info-table-title">商品情報（下段）</div>
@@ -974,7 +1009,7 @@ function createProductCard(asin, data){
   buildCenterMetrics(card.querySelector(".js-center"), data);
   buildDetailTable(card.querySelector(".js-detailTable"), data);
 
-  // ✅商品情報（center + table）
+  // 商品情報（center + table）
   const jpAsin = data["日本ASIN"] || "－";
   const usAsin = data["アメリカASIN"] || asin;
   const realW = data["重量kg"] ?? data["重量（kg）"] ?? data["重量"] ?? "";
@@ -985,6 +1020,9 @@ function createProductCard(asin, data){
 
   buildInfoCenterGrid(card.querySelector(".js-infoCenterGrid"), ctx);
   buildInfoTable(card.querySelector(".js-infoTable"), ctx);
+
+  // ✅ 指標(商品情報枠)
+  buildInfoMetrics(card.querySelector(".js-infoMetrics"), data);
 
   // chart
   const canvas = card.querySelector(".js-chart");
