@@ -20,6 +20,7 @@
     <a class="layout-link active" href="./index.html">通常レイアウト</a>
     <a class="layout-link" href="./alt.html">新レイアウト</a>
     <a class="layout-link" href="./layout3.html">レイアウト3</a>
+    <a class="layout-link" href="./layout4.html">レイアウト4</a>
   </div>
 
   <div id="headerStatus" class="header-status"></div>
@@ -79,31 +80,35 @@
     <div class="asin-catalog-head">
       <div class="asin-catalog-title">データがあるASIN（クリックで表示）</div>
     </div>
-    <div class="asin-catalog-body" id="asinCatalog"></div>
+    <div id="asinCatalog" class="asin-catalog-body"></div>
   </section>
 
-  <section id="cartSummary" class="cart-summary card">
+  <section class="items-wrap">
+    <div id="emptyState" class="empty-state card">
+      <div class="empty-title">ASINをクリックしてカードを追加してください</div>
+      <div class="empty-sub">上の5枠（プール/商品情報/真ん中/下段/非表示）をドラッグで自由にカスタムできます。</div>
+    </div>
+
+    <div id="itemsContainer" class="items-container"></div>
+  </section>
+
+  <aside class="cart-bar card">
     <div class="cart-head">
-      <div class="card-title">カート</div>
-      <div class="cart-note">※ 仕入れ額(￥)と販売価格($)×為替(固定)で予測</div>
+      <div class="cart-title">カート集計</div>
+      <div class="cart-sub">数量×価格×円換算（FX固定）で概算</div>
     </div>
+
     <div class="cart-grid">
-      <div><span>今の仕入れ合計額</span><b id="cartTotalCost">￥0</b></div>
-      <div><span>売り上げ予測</span><b id="cartTotalRevenue">￥0</b></div>
-      <div><span>利益予測</span><b id="cartTotalProfit">￥0</b></div>
-      <div><span>今の仕入れASIN数</span><b id="cartAsinCount">0</b></div>
-      <div><span>今の仕入れ商品数</span><b id="cartItemCount">0</b></div>
+      <div class="cart-k">ASIN数</div><div class="cart-v" id="cartAsinCount">0</div>
+      <div class="cart-k">合計個数</div><div class="cart-v" id="cartItemCount">0</div>
+      <div class="cart-k">仕入合計</div><div class="cart-v" id="cartTotalCost">￥0</div>
+      <div class="cart-k">売上換算</div><div class="cart-v" id="cartTotalRevenue">￥0</div>
+      <div class="cart-k">粗利概算</div><div class="cart-v" id="cartTotalProfit">￥0</div>
     </div>
-  </section>
-
-  <div id="emptyState" class="empty card">
-    ASINをクリックして商品を表示してください
-  </div>
-
-  <div id="itemsContainer" class="items-stack"></div>
+  </aside>
 </main>
 
-<script src="./asin-data.js"></script>
-<script src="./main.js"></script>
+<script src="./asin-data.js?v=20251217_1"></script>
+<script src="./main.js?v=20251218_1"></script>
 </body>
 </html>
