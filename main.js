@@ -3,10 +3,8 @@
  * - レイアウト3追加（body.third-layout）
  * - 商品情報は商品情報枠（zoneState.info）を上から半分ずつで
  *   商品情報①/商品情報②に分割表示（レイアウト3のみ）
- * - 商品情報は「値だけ」ではなく「枠全体」をスクロール（CSS側で対応）
- * - レイアウト3：上段（赤枠）を同じ高さに揃える（CSS側で対応）
- * - 重要視項目（Focus rules）追加：
- *    プールの項目から選択→閾値指定→該当ASINカード/行を🔥で強調
+ * - ★重要視項目（ソートの下）追加：
+ *   pool内の項目を選択→数値条件を設定→全条件(AND)を満たすASINに🔥表示
  **************************************************************/
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -31,7 +29,7 @@ const METRICS_ALL = [
   { id: "FBA最安値", label: "FBA最安値", sourceKey: "FBA最安値" },
 
   { id: "粗利益率予測", label: "粗利益率予測", sourceKey: "粗利益率予測" },
-  { id: "入###", label: "入金額予測（円）", sourceKey: "入金額予測" },
+  { id: "入金額予測", label: "入金額予測（円）", sourceKey: "入金額予測" },
   { id: "粗利益予測", label: "粗利益予測（1個）", sourceKey: "粗利益予測" },
 
   { id: "粗利益", label: "粗利益", sourceKey: "粗利益" },
@@ -128,7 +126,7 @@ const DEFAULT_ZONES = {
   center: [
     tokM("過去3月FBA最安値"),
     tokM("FBA最安値"),
-    tokM("入###"),
+    tokM("入金額予測"),
     tokM("180日販売数"),
     tokM("90日販売数"),
     tokM("粗利益率予測"),
@@ -196,17 +194,20 @@ const cartAsinCount = $("#cartAsinCount");
 const cartItemCount = $("#cartItemCount");
 
 /* sort */
+const sortBar = $("#sortBar");
 const sortControls = $("#sortControls");
 const addSortRuleBtn = $("#addSortRuleBtn");
 const applySortBtn = $("#applySortBtn");
 const clearSortBtn = $("#clearSortBtn");
 let sortRules = [];
 
-/* focus (重要視項目) */
-const focusControls = $("#focusControls");
-const addFocusRuleBtn = $("#addFocusRuleBtn");
-const clearFocusBtn = $("#clearFocusBtn");
-let focusRules = [];
+/* important（重要視項目） */
+const importantBar = $("#importantBar");
+const importantControls = $("#importantControls");
+const addImportantRuleBtn = $("#addImportantRuleBtn");
+const applyImportantBtn = $("#applyImportantBtn");
+const clearImportantBtn = $("#clearImportantBtn");
+let importantRules = [];
 
 init();
 
@@ -214,7 +215,7 @@ function init() {
   initPoolUI();
   initCatalog();
   initSortUI();
-  initFocusUI();
+  initImportantUI();
   initActions();
   updateCartSummary();
   updateHeaderStatus();
@@ -245,8 +246,8 @@ function initActions() {
     sortRules = [];
     renderSortControls();
 
-    focusRules = [];
-    renderFocusControls();
+    importantRules = [];
+    renderImportantControls();
 
     renderTopZones();
     rerenderAllCards();
@@ -261,6 +262,7 @@ function initActions() {
     itemsContainer.innerHTML = "";
     emptyState.style.display = "block";
     updateHeaderStatus();
+    updateImportantMarks();
   });
 
   clearCartBtn?.addEventListener("click", () => {
@@ -298,6 +300,7 @@ function addOrFocusCard(asin) {
   cardState.set(asin, { el: card, data, chart: card.__chart || null });
 
   updateHeaderStatus();
+  updateImportantMarks();
 }
 
 function updateHeaderStatus() {
@@ -322,7 +325,7 @@ function renderTopZones() {
   zoneState.hidden.forEach((t) => zoneHidden.appendChild(makePill(t)));
 
   refreshSortRuleOptions();
-  refreshFocusRuleOptions();
+  refreshImportantRuleOptions();
 }
 
 function makePill(token) {
@@ -470,6 +473,166 @@ function applySort() {
   });
 
   entries.forEach(([_, v]) => itemsContainer.appendChild(v.el));
+
+  updateImportantMarks();
+}
+
+/* =========================
+   Important（重要視項目）
+   - pool内の項目（token）から選択
+   - 数値比較（>=, <=, =）
+   - 複数条件は AND（全部満たすと🔥）
+========================= */
+function initImportantUI() {
+  importantRules = [];
+  renderImportantControls();
+
+  addImportantRuleBtn?.addEventListener("click", () => {
+    const candidates = getImportantCandidates();
+    const first = candidates[0] || tokM(METRICS_ALL[0].id);
+    importantRules.push({ token: first, op: "gte", value: 0 });
+    renderImportantControls();
+  });
+
+  applyImportantBtn?.addEventListener("click", () => {
+    updateImportantMarks();
+  });
+
+  clearImportantBtn?.addEventListener("click", () => {
+    importantRules = [];
+    renderImportantControls();
+    updateImportantMarks();
+  });
+}
+
+function renderImportantControls() {
+  if (!importantControls) return;
+  importantControls.innerHTML = "";
+
+  importantRules.forEach((r, idx) => {
+    const row = document.createElement("div");
+    row.className = "important-row";
+
+    const selToken = document.createElement("select");
+    const opts = getImportantCandidates()
+      .map((t) => `<option value="${t}" ${t === r.token ? "selected" : ""}>${labelOf(t)}</option>`)
+      .join("");
+    selToken.innerHTML = opts || `<option value="${tokM(METRICS_ALL[0].id)}">${METRICS_ALL[0].label}</option>`;
+    selToken.addEventListener("change", () => {
+      r.token = selToken.value;
+      updateImportantMarks();
+    });
+
+    const selOp = document.createElement("select");
+    selOp.innerHTML = `
+      <option value="gte" ${r.op === "gte" ? "selected" : ""}>以上</option>
+      <option value="lte" ${r.op === "lte" ? "selected" : ""}>以下</option>
+      <option value="eq"  ${r.op === "eq"  ? "selected" : ""}>一致</option>
+    `;
+    selOp.addEventListener("change", () => {
+      r.op = selOp.value;
+      updateImportantMarks();
+    });
+
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.step = "0.01";
+    inp.value = String(r.value ?? 0);
+    inp.placeholder = "数値";
+    inp.addEventListener("input", () => {
+      r.value = Number(inp.value || 0);
+      updateImportantMarks();
+    });
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "削除";
+    del.addEventListener("click", () => {
+      importantRules.splice(idx, 1);
+      renderImportantControls();
+      updateImportantMarks();
+    });
+
+    row.appendChild(selToken);
+    row.appendChild(selOp);
+    row.appendChild(inp);
+    row.appendChild(del);
+    importantControls.appendChild(row);
+  });
+}
+
+function getImportantCandidates() {
+  // 「プールに存在する項目」から選択（M/Iどちらも選べる）
+  // ※ 数値評価できない項目は条件判定で弾かれる（false）
+  return zoneState.pool.slice();
+}
+
+function refreshImportantRuleOptions() {
+  const poolTokens = new Set(zoneState.pool);
+  importantRules.forEach((r) => {
+    if (!poolTokens.has(r.token)) {
+      r.token = zoneState.pool[0] || tokM(METRICS_ALL[0].id);
+    }
+  });
+  renderImportantControls();
+}
+
+function tokenNumericValue(token, ctx, data) {
+  const { type, id } = parseToken(token);
+
+  if (type === "M") {
+    const m = METRIC_BY_ID[id];
+    if (!m) return NaN;
+    const raw = data?.[m.sourceKey];
+    const n = Number(String(raw ?? "").trim().replace(/[^\d.\-]/g, ""));
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  if (type === "I") {
+    const v = resolveTokenValue(token, ctx, data);
+    if (!v) return NaN;
+    if (v.kind === "tags") return NaN;
+    return num(v.text);
+  }
+
+  return NaN;
+}
+
+function matchImportantRules(data, ctx) {
+  if (!importantRules || importantRules.length === 0) return false;
+
+  return importantRules.every((r) => {
+    const v = tokenNumericValue(r.token, ctx, data);
+    if (!Number.isFinite(v)) return false;
+
+    const target = Number(r.value ?? 0);
+    if (r.op === "gte") return v >= target;
+    if (r.op === "lte") return v <= target;
+    if (r.op === "eq") return v === target;
+    return false;
+  });
+}
+
+function updateImportantMarks() {
+  cardState.forEach((v) => {
+    const el = v.el;
+    const asin = el.dataset.asin;
+
+    const jpAsin = v.data["日本ASIN"] || "－";
+    const usAsin = v.data["アメリカASIN"] || asin || "－";
+    const realW = v.data["重量kg"] ?? v.data["重量（kg）"] ?? v.data["重量"] ?? "";
+    const volW = v.data["容積重量"] ?? "";
+    const size = v.data["サイズ"] || "－";
+    const weight = `${fmtKg(realW)}（${fmtKg(volW)}）`;
+    const ctx = { asin, jpAsin, usAsin, size, weight, data: v.data };
+
+    const ok = matchImportantRules(v.data, ctx);
+
+    el.classList.toggle("is-important", ok);
+
+    const badge = el.querySelector(".important-badge");
+    if (badge) badge.style.display = ok ? "inline-flex" : "none";
+  });
 }
 
 /* =========================
@@ -553,7 +716,6 @@ function buildInfoGrid(container, ctx, data, tokens) {
 
     const val = document.createElement("div");
     val.className = "v";
-    val.dataset.token = tok;
 
     if (v.kind === "tags") {
       val.classList.add("v-tags");
@@ -589,7 +751,6 @@ function buildCenterList(container, ctx, data) {
 
     const row = document.createElement("div");
     row.className = "metric-row";
-    row.dataset.token = tok;
     row.innerHTML = `
       <div class="label">${v.label}</div>
       <div class="value">${v.kind === "tags" ? "" : (v.text ?? "－")}</div>
@@ -617,12 +778,10 @@ function buildDetailTable(tableEl, ctx, data) {
 
     const th = document.createElement("th");
     th.textContent = v.label;
-    th.dataset.token = tok;
     theadRow.appendChild(th);
 
     const td = document.createElement("td");
     td.className = "info-td";
-    td.dataset.token = tok;
 
     if (v.kind === "tags") {
       td.classList.add("info-td-tags");
@@ -664,8 +823,9 @@ function rerenderAllCards() {
 
     buildCenterList(v.el.querySelector(".js-center"), ctx, v.data);
     buildDetailTable(v.el.querySelector(".js-detailTable"), ctx, v.data);
-    applyFocusHighlightsToCard(v.el, v.data);
   });
+
+  updateImportantMarks();
 }
 
 /* =========================
@@ -754,7 +914,7 @@ function createProductCard(asin, data) {
   if (isThirdLayout) {
     card.innerHTML = `
       <div class="card-top">
-        <div class="title">ASIN: ${asin}<span class="focus-badge js-focusBadge" style="display:none;">🔥重要</span></div>
+        <div class="title">ASIN: ${asin} <span class="important-badge" style="display:none" title="重要視項目を満たしています">🔥</span></div>
         <button class="remove" type="button">この行を削除</button>
       </div>
 
@@ -843,7 +1003,7 @@ function createProductCard(asin, data) {
     card.innerHTML = isAltLayout
       ? `
       <div class="card-top">
-        <div class="title">ASIN: ${asin}<span class="focus-badge js-focusBadge" style="display:none;">🔥重要</span></div>
+        <div class="title">ASIN: ${asin} <span class="important-badge" style="display:none" title="重要視項目を満たしています">🔥</span></div>
         <button class="remove" type="button">この行を削除</button>
       </div>
 
@@ -916,7 +1076,7 @@ function createProductCard(asin, data) {
     `
       : `
       <div class="card-top">
-        <div class="title">ASIN: ${asin}<span class="focus-badge js-focusBadge" style="display:none;">🔥重要</span></div>
+        <div class="title">ASIN: ${asin} <span class="important-badge" style="display:none" title="重要視項目を満たしています">🔥</span></div>
         <button class="remove" type="button">この行を削除</button>
       </div>
 
@@ -1004,6 +1164,7 @@ function createProductCard(asin, data) {
 
     if (cardState.size === 0) emptyState.style.display = "block";
     updateHeaderStatus();
+    updateImportantMarks();
   });
 
   // inputs
@@ -1051,9 +1212,6 @@ function createProductCard(asin, data) {
   buildCenterList(card.querySelector(".js-center"), ctx, data);
   buildDetailTable(card.querySelector(".js-detailTable"), ctx, data);
 
-  // focus apply (初期)
-  applyFocusHighlightsToCard(card, data);
-
   // chart
   const canvas = card.querySelector(".js-chart");
   const chart = renderChart(canvas);
@@ -1098,176 +1256,6 @@ function createProductCard(asin, data) {
     setMode("MES");
   }
 
+  updateImportantMarks();
   return card;
-}
-
-/* =========================
-   重要視項目（Focus rules）
-   - プールの項目から選択して閾値を指定
-   - 条件に合うASINカードを 🔥 で強調
-========================= */
-function initFocusUI() {
-  focusRules = [];
-  renderFocusControls();
-
-  addFocusRuleBtn?.addEventListener("click", () => {
-    const options = zoneState.pool || [];
-    const first = options[0] || tokM(METRICS_ALL[0].id);
-    focusRules.push({ token: first, op: ">=", value: "" });
-    renderFocusControls();
-    rerenderAllCards();
-  });
-
-  clearFocusBtn?.addEventListener("click", () => {
-    focusRules = [];
-    renderFocusControls();
-    rerenderAllCards();
-  });
-}
-
-function renderFocusControls() {
-  if (!focusControls) return;
-  focusControls.innerHTML = "";
-
-  if (!focusRules || focusRules.length === 0) {
-    const p = document.createElement("div");
-    p.style.fontSize = "12px";
-    p.style.opacity = ".75";
-    p.textContent = "未設定（必要なら「重要視条件を追加」を押してください）";
-    focusControls.appendChild(p);
-    return;
-  }
-
-  focusRules.forEach((r, idx) => {
-    const row = document.createElement("div");
-    row.className = "focus-row";
-
-    const poolTokens = zoneState.pool || [];
-    const optionHtml = poolTokens
-      .map((t) => `<option value="${t}" ${t === r.token ? "selected" : ""}>${labelOf(t)}</option>`)
-      .join("");
-
-    const sel = document.createElement("select");
-    sel.innerHTML = optionHtml || `<option value="${r.token}">${labelOf(r.token)}</option>`;
-    sel.addEventListener("change", () => {
-      r.token = sel.value;
-      rerenderAllCards();
-    });
-
-    const selOp = document.createElement("select");
-    selOp.innerHTML = `
-      <option value=">=" ${r.op === ">=" ? "selected" : ""}>&ge;</option>
-      <option value="<=" ${r.op === "<=" ? "selected" : ""}>&le;</option>
-      <option value=">" ${r.op === ">" ? "selected" : ""}>&gt;</option>
-      <option value="<" ${r.op === "<" ? "selected" : ""}>&lt;</option>
-      <option value="=" ${r.op === "=" ? "selected" : ""}>=</option>
-    `;
-    selOp.addEventListener("change", () => {
-      r.op = selOp.value;
-      rerenderAllCards();
-    });
-
-    const inp = document.createElement("input");
-    inp.type = "number";
-    inp.step = "0.01";
-    inp.placeholder = "数値";
-    inp.value = r.value ?? "";
-    inp.addEventListener("input", () => {
-      r.value = inp.value;
-      rerenderAllCards();
-    });
-
-    const del = document.createElement("button");
-    del.type = "button";
-    del.className = "ghost-del";
-    del.textContent = "削除";
-    del.addEventListener("click", () => {
-      focusRules.splice(idx, 1);
-      renderFocusControls();
-      rerenderAllCards();
-    });
-
-    row.appendChild(sel);
-    row.appendChild(selOp);
-    row.appendChild(inp);
-    row.appendChild(del);
-    focusControls.appendChild(row);
-  });
-}
-
-function refreshFocusRuleOptions() {
-  const poolTokens = zoneState.pool || [];
-  focusRules.forEach((r) => {
-    if (!poolTokens.includes(r.token)) {
-      r.token = poolTokens[0] || r.token;
-    }
-  });
-  renderFocusControls();
-}
-
-function parseNumericCell(val) {
-  if (val == null) return null;
-  const s = String(val).trim();
-  if (!s) return null;
-  const n = Number(s.replace(/[^\d.\-]/g, ""));
-  return Number.isFinite(n) ? n : null;
-}
-
-function evalRuleOnData(rule, data) {
-  const { token, op, value } = rule;
-  const { type, id } = parseToken(token);
-  if (type !== "M") return { ok: false, actual: null }; // 数値判定は指標(M)のみ
-
-  const m = METRIC_BY_ID[id];
-  if (!m) return { ok: false, actual: null };
-
-  const actual = parseNumericCell(data?.[m.sourceKey]);
-  const target = parseNumericCell(value);
-  if (actual == null || target == null) return { ok: false, actual };
-
-  let ok = false;
-  if (op === ">=") ok = actual >= target;
-  else if (op === "<=") ok = actual <= target;
-  else if (op === ">") ok = actual > target;
-  else if (op === "<") ok = actual < target;
-  else if (op === "=") ok = actual === target;
-
-  return { ok, actual };
-}
-
-function clearFocusMarks(cardEl) {
-  cardEl.classList.remove("focus-hit");
-
-  const badge = cardEl.querySelector(".js-focusBadge");
-  if (badge) badge.style.display = "none";
-
-  cardEl.querySelectorAll(".hit").forEach((el) => el.classList.remove("hit"));
-}
-
-function applyFocusHighlightsToCard(cardEl, data) {
-  if (!cardEl) return;
-  clearFocusMarks(cardEl);
-
-  if (!focusRules || focusRules.length === 0) return;
-
-  let anyHit = false;
-  const hitTokens = new Set();
-
-  focusRules.forEach((r) => {
-    const res = evalRuleOnData(r, data);
-    if (res.ok) {
-      anyHit = true;
-      hitTokens.add(r.token);
-    }
-  });
-
-  if (!anyHit) return;
-
-  cardEl.classList.add("focus-hit");
-  const badge = cardEl.querySelector(".js-focusBadge");
-  if (badge) badge.style.display = "inline-flex";
-
-  hitTokens.forEach((tok) => {
-    cardEl.querySelectorAll(`[data-token="${tok}"]`).forEach((el) => el.classList.add("hit"));
-  });
 }
