@@ -341,8 +341,7 @@ function attachZoneDnD(zoneEl, { zoneKey }) {
     const raw = e.dataTransfer.getData("text/plain");
     if (!raw) return;
 
-    // ✅ token自体に「:」(例: M:粗利益率予測) が含まれるため、split(":") すると壊れる
-    //    → prefix を剥がして残り全部を token として扱う
+    // ✅ token自体に「:」が含まれるため split(":") は使わない
     const PREFIX = "item:";
     if (!raw.startsWith(PREFIX)) return;
     const token = raw.slice(PREFIX.length);
@@ -740,7 +739,7 @@ function createProductCard(asin, data) {
 
   // ---- 共通（上部） ----
   const top = document.createElement("div");
-  top.className = isThird ? "summary-row l3-grid" : "summary-row";
+  top.className = "summary-row";
 
   // left: image + buy box
   const leftWrap = document.createElement("div");
@@ -767,18 +766,10 @@ function createProductCard(asin, data) {
   // info box
   const infoBox = document.createElement("div");
   infoBox.className = "info-box";
-
-  if (isThird) {
-    infoBox.innerHTML = `
-      <div class="head">商品情報①</div>
-      <div class="info-grid js-infoGridA"></div>
-    `;
-  } else {
-    infoBox.innerHTML = `
-      <div class="head">商品情報</div>
-      <div class="info-grid js-infoGrid"></div>
-    `;
-  }
+  infoBox.innerHTML = `
+    <div class="head">商品情報</div>
+    <div class="info-grid js-infoGrid"></div>
+  `;
 
   // center box
   const centerBox = document.createElement("div");
@@ -788,61 +779,13 @@ function createProductCard(asin, data) {
     <div class="center-list js-center"></div>
   `;
 
-  // third layout extra info
-  const infoBoxB = document.createElement("div");
-  infoBoxB.className = "info-box";
+  // ---- assemble top by layout flags (元コードのまま) ----
+  leftWrap.appendChild(imageBox);
+  leftWrap.appendChild(buyBox);
 
-  if (isThird) {
-    infoBoxB.innerHTML = `
-      <div class="head">商品情報②</div>
-      <div class="info-grid js-infoGridB"></div>
-    `;
-  }
-
-  // build top row layout by mode
-  if (isThird) {
-    // l3 grid zones by CSS
-    const l3Image = document.createElement("div");
-    l3Image.className = "l3-block l3-image";
-    l3Image.appendChild(imageBox);
-
-    const l3InfoA = document.createElement("div");
-    l3InfoA.className = "l3-block l3-infoA";
-    l3InfoA.innerHTML = `<div class="head">商品情報①</div>`;
-    l3InfoA.appendChild(infoBox.querySelector(".js-infoGridA"));
-
-    const l3InfoB = document.createElement("div");
-    l3InfoB.className = "l3-block l3-infoB";
-    l3InfoB.innerHTML = `<div class="head">商品情報②</div>`;
-    l3InfoB.appendChild(infoBoxB.querySelector(".js-infoGridB"));
-
-    const l3Center = document.createElement("div");
-    l3Center.className = "l3-block l3-center";
-    l3Center.innerHTML = `<div class="head">主要指標</div>`;
-    l3Center.appendChild(centerBox.querySelector(".js-center"));
-
-    const l3Buy = document.createElement("div");
-    l3Buy.className = "l3-buy";
-    l3Buy.innerHTML = `
-      <div class="buy-title">数量</div>
-    `;
-    // move buyBox content into l3Buy
-    l3Buy.appendChild(buyBox);
-
-    top.appendChild(l3Image);
-    top.appendChild(l3InfoA);
-    top.appendChild(l3InfoB);
-    top.appendChild(l3Center);
-    top.appendChild(l3Buy);
-  } else {
-    // normal/alt: leftWrap contains image + fields, then infoBox & centerBox
-    leftWrap.appendChild(imageBox);
-    leftWrap.appendChild(buyBox);
-
-    top.appendChild(leftWrap);
-    top.appendChild(infoBox);
-    top.appendChild(centerBox);
-  }
+  top.appendChild(leftWrap);
+  top.appendChild(infoBox);
+  top.appendChild(centerBox);
 
   // ---- graph ----
   const graph = document.createElement("div");
@@ -870,12 +813,6 @@ function createProductCard(asin, data) {
     </div>
   `;
 
-  if (isThird) {
-    keepa.classList.add("l3-keepa");
-    mes.classList.add("l3-mes");
-    graph.classList.add("l3-grid-2");
-  }
-
   graph.appendChild(keepa);
   graph.appendChild(mes);
 
@@ -892,7 +829,6 @@ function createProductCard(asin, data) {
     </div>
   `;
 
-  // ---- assemble ----
   card.appendChild(top);
   card.appendChild(graph);
   card.appendChild(detail);
@@ -928,7 +864,23 @@ function createProductCard(asin, data) {
   showDS?.addEventListener("change", onToggle);
   showSP?.addEventListener("change", onToggle);
 
-  // initial render per layout state
+  // initial render
+  const jpAsin = data["日本ASIN"] || "－";
+  const usAsin = data["アメリカASIN"] || asin || "－";
+  const realW = data["重量kg"] ?? data["重量（kg）"] ?? data["重量"] ?? "";
+  const volW = data["容積重量"] ?? "";
+  const size = data["サイズ"] || "－";
+  const weight = `${fmtKg(realW)}（${fmtKg(volW)}）`;
+  const ctx = { asin, jpAsin, usAsin, size, weight, data };
+
+  // 商品情報
+  buildInfoGrid(card.querySelector(".js-infoGrid"), ctx, data);
+  // 真ん中
+  buildCenterList(card.querySelector(".js-center"), ctx, data);
+  // 下段
+  buildDetailTable(card.querySelector(".js-detailTable"), ctx, data);
+
+  // layout3向け: 既存カードを更新する（必要なDOMがあれば対応）
   rerenderAllCards();
 
   return card;
