@@ -735,6 +735,7 @@ function createProductCard(asin, data) {
 
   const isAltLayout = document.body.classList.contains("alt-layout");
   const isThirdLayout = document.body.classList.contains("third-layout");
+  const isFourthLayout = document.body.classList.contains("fourth-layout");
 
   if (isThirdLayout) {
     card.innerHTML = `
@@ -800,6 +801,87 @@ function createProductCard(asin, data) {
 
         <!-- 需要供給（大） -->
         <div class="l3-mes l3-block">
+          <div class="head">需要供給グラフ（180日）</div>
+
+          <div class="graph-options js-graphOptions" style="margin-bottom:10px;">
+            <label><input type="checkbox" class="js-chkDS" checked />《需要＆供給》</label>
+            <label><input type="checkbox" class="js-chkSP" />《供給＆価格》</label>
+          </div>
+
+          <div class="mes-big">
+            <canvas class="js-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-wrap">
+        <div class="detail-head"><div class="t">その他項目</div></div>
+        <div class="detail-scroll">
+          <table class="detail-table js-detailTable">
+            <thead><tr></tr></thead>
+            <tbody><tr></tr></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  } else if (isFourthLayout) {
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="title">ASIN: ${asin}</div>
+        <button class="remove" type="button">この行を削除</button>
+      </div>
+
+      <div class="layout4-grid">
+        <!-- 商品画像 -->
+        <div class="l4-image l4-block">
+          <div class="head">商品画像</div>
+          <div class="image-box">
+            <img src="${data["商品画像"] || ""}" alt="商品画像" onerror="this.style.display='none';" />
+          </div>
+        </div>
+
+        <!-- 商品情報 -->
+        <div class="l4-info l4-block">
+          <div class="head">商品情報</div>
+          <div class="info-grid js-infoGrid"></div>
+        </div>
+
+        <!-- 主要項目（縦長） -->
+        <div class="l4-main l4-block">
+          <div class="head">主要項目</div>
+          <div class="center-list js-center"></div>
+        </div>
+
+        <!-- カート（縦長） -->
+        <div class="l4-cart">
+          <div class="buy-title">数量</div>
+          <select class="js-qty">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+
+          <div class="buy-title" style="margin-top:10px;">販売価格（$）</div>
+          <input class="js-sell" type="number" step="0.01" placeholder="例: 39.99" />
+
+          <div class="buy-title" style="margin-top:10px;">仕入れ額（￥）</div>
+          <input class="js-cost" type="number" step="1" placeholder="例: 3700" />
+
+          <button class="cart-btn js-addCart" type="button" style="margin-top:12px;">カートに入れる</button>
+        </div>
+
+        <!-- keepa（小） -->
+        <div class="l4-keepa l4-block">
+          <div class="head">keepaグラフ</div>
+          <div class="keepa-mini">
+            <iframe class="js-keepaFrame" src="" loading="lazy"></iframe>
+          </div>
+        </div>
+
+        <!-- 需要供給（大） -->
+        <div class="l4-mes l4-block">
           <div class="head">需要供給グラフ（180日）</div>
 
           <div class="graph-options js-graphOptions" style="margin-bottom:10px;">
@@ -919,15 +1001,19 @@ function createProductCard(asin, data) {
                 <option value="4">4</option>
                 <option value="5">5</option>
               </select>
+            </div>
 
+            <div class="field">
               <label>販売価格（$）</label>
               <input class="js-sell" type="number" step="0.01" placeholder="例: 39.99" />
+            </div>
 
+            <div class="field">
               <label>仕入れ額（￥）</label>
               <input class="js-cost" type="number" step="1" placeholder="例: 3700" />
-
-              <button class="cart-btn js-addCart" type="button">カートに入れる</button>
             </div>
+
+            <button class="cart-btn js-addCart" type="button">カートに入れる</button>
           </div>
 
           <div class="info-box">
@@ -943,10 +1029,6 @@ function createProductCard(asin, data) {
         <div class="graph-box">
           <div class="graph-head">
             <div class="graph-title">グラフ（180日）</div>
-            <div class="switch">
-              <button type="button" class="js-btnMes active">MES-AI-A</button>
-              <button type="button" class="js-btnKeepa">Keepa</button>
-            </div>
           </div>
 
           <div class="graph-options js-graphOptions">
@@ -955,11 +1037,12 @@ function createProductCard(asin, data) {
           </div>
 
           <div class="graph-body">
+            <div class="keepa-wrap js-keepaWrap">
+              <iframe class="js-keepaFrame" src="" loading="lazy"></iframe>
+            </div>
+
             <div class="canvas-wrap js-mesWrap">
               <canvas class="js-chart"></canvas>
-            </div>
-            <div class="keepa-wrap js-keepaWrap" style="display:none;">
-              <iframe class="js-keepaFrame" src="" loading="lazy"></iframe>
             </div>
           </div>
         </div>
@@ -977,108 +1060,73 @@ function createProductCard(asin, data) {
     `;
   }
 
-  // remove
-  card.querySelector(".remove").addEventListener("click", () => {
-    if (cart.has(asin)) {
-      cart.delete(asin);
-      updateCartSummary();
-    }
-    if (card.__chart) card.__chart.destroy();
-    card.remove();
+  // 既存のイベント/描画ロジック（共通）
+  const removeBtn = card.querySelector(".remove");
+  removeBtn?.addEventListener("click", () => {
+    const st = cardState.get(asin);
+    if (st?.chart) st.chart.destroy();
     cardState.delete(asin);
-
+    card.remove();
     if (cardState.size === 0) emptyState.style.display = "block";
     updateHeaderStatus();
   });
 
-  // inputs
-  const sellInput = card.querySelector(".js-sell");
-  const costInput = card.querySelector(".js-cost");
+  const qtyEl = card.querySelector(".js-qty");
+  const sellEl = card.querySelector(".js-sell");
+  const costEl = card.querySelector(".js-cost");
+  const addCartBtn = card.querySelector(".js-addCart");
 
-  if (data["販売額（ドル）"]) {
-    const s = String(data["販売額（ドル）"]).replace(/[^\d.]/g, "");
-    if (s) sellInput.value = s;
-  }
-  if (data["仕入れ目安単価"]) {
-    const c = String(data["仕入れ目安単価"]).replace(/[^\d]/g, "");
-    if (c) costInput.value = c;
-  }
-
-  card.querySelector(".js-addCart").addEventListener("click", () => {
-    const qty = Math.max(1, Number(card.querySelector(".js-qty").value || 1));
-    const sellUSD = num(sellInput.value);
-    const costJPY = num(costInput.value);
-
-    if (sellUSD <= 0) return alert("販売価格（$）を入力してください");
-    if (costJPY <= 0) return alert("仕入れ額（￥）を入力してください");
+  addCartBtn?.addEventListener("click", () => {
+    const qty = Number(qtyEl?.value || 1);
+    const sellUSD = num(sellEl?.value || 0);
+    const costJPY = num(costEl?.value || 0);
 
     cart.set(asin, { qty, sellUSD, costJPY });
     updateCartSummary();
   });
 
-  // ctx
+  // keepa iframe
+  const keepaFrame = card.querySelector(".js-keepaFrame");
+  if (keepaFrame) {
+    const keepaUrl = data["KeepaURL"] || data["keepaURL"] || data["keepa"] || "";
+    if (keepaUrl) keepaFrame.src = keepaUrl;
+  }
+
+  // chart
+  const canvas = card.querySelector(".js-chart");
+  let chart = null;
+  if (canvas) {
+    chart = renderChart(canvas);
+    card.__chart = chart;
+  }
+
+  // graph options
+  const optionsWrap = card.querySelector(".js-graphOptions");
+  const chkDS = optionsWrap?.querySelector(".js-chkDS");
+  const chkSP = optionsWrap?.querySelector(".js-chkSP");
+  if (chart && chkDS && chkSP) {
+    const apply = () => updateChartVisibility(chart, chkDS.checked, chkSP.checked);
+    chkDS.addEventListener("change", apply);
+    chkSP.addEventListener("change", apply);
+    apply();
+  }
+
+  // initial render
   const jpAsin = data["日本ASIN"] || "－";
-  const usAsin = data["アメリカASIN"] || asin;
+  const usAsin = data["アメリカASIN"] || asin || "－";
   const realW = data["重量kg"] ?? data["重量（kg）"] ?? data["重量"] ?? "";
   const volW = data["容積重量"] ?? "";
   const size = data["サイズ"] || "－";
   const weight = `${fmtKg(realW)}（${fmtKg(volW)}）`;
   const ctx = { asin, jpAsin, usAsin, size, weight, data };
 
-  // info
   if (isThirdLayout) {
     buildInfoGridSplit(card.querySelector(".js-infoGridA"), card.querySelector(".js-infoGridB"), ctx, data);
   } else {
     buildInfoGrid(card.querySelector(".js-infoGrid"), ctx, data);
   }
-
-  // center / table
   buildCenterList(card.querySelector(".js-center"), ctx, data);
   buildDetailTable(card.querySelector(".js-detailTable"), ctx, data);
-
-  // chart
-  const canvas = card.querySelector(".js-chart");
-  const chart = renderChart(canvas);
-  card.__chart = chart;
-
-  const chkDS = card.querySelector(".js-chkDS");
-  const chkSP = card.querySelector(".js-chkSP");
-  const refreshVis = () => updateChartVisibility(chart, chkDS.checked, chkSP.checked);
-  chkDS?.addEventListener("change", refreshVis);
-  chkSP?.addEventListener("change", refreshVis);
-  updateChartVisibility(chart, true, false);
-
-  // keepa
-  const keepaFrame = card.querySelector(".js-keepaFrame");
-  if (keepaFrame) keepaFrame.src = `https://keepa.com/#!product/1-${asin}`;
-
-  // 通常レイアウトのみ：トグル維持
-  if (!isAltLayout && !isThirdLayout) {
-    const keepaWrap = card.querySelector(".js-keepaWrap");
-    const mesWrap = card.querySelector(".js-mesWrap");
-    const graphOptions = card.querySelector(".js-graphOptions");
-    const btnMes = card.querySelector(".js-btnMes");
-    const btnKeepa = card.querySelector(".js-btnKeepa");
-
-    function setMode(mode) {
-      if (mode === "MES") {
-        btnMes.classList.add("active");
-        btnKeepa.classList.remove("active");
-        graphOptions.style.display = "flex";
-        mesWrap.style.display = "block";
-        keepaWrap.style.display = "none";
-      } else {
-        btnKeepa.classList.add("active");
-        btnMes.classList.remove("active");
-        graphOptions.style.display = "none";
-        mesWrap.style.display = "none";
-        keepaWrap.style.display = "block";
-      }
-    }
-    btnMes.addEventListener("click", () => setMode("MES"));
-    btnKeepa.addEventListener("click", () => setMode("KEEPA"));
-    setMode("MES");
-  }
 
   return card;
 }
