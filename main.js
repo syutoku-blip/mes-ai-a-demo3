@@ -340,7 +340,12 @@ function attachZoneDnD(zoneEl, { zoneKey }) {
     e.preventDefault();
     const raw = e.dataTransfer.getData("text/plain");
     if (!raw) return;
-    const [kind, token] = raw.split(":");
+
+    // ★ここだけ修正（tokenに ":" が含まれるため split(":") で壊れる）
+    const first = raw.indexOf(":");
+    if (first < 0) return;
+    const kind = raw.slice(0, first);
+    const token = raw.slice(first + 1);
     if (kind !== "item" || !token) return;
 
     moveTokenToZone(token, zoneKey);
