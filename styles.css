@@ -614,15 +614,16 @@ body{
 
 /* =========================
    Layout4（fourth-layout）
-   - レイアウト4の配置だけ（画像の通り）に調整
-   - 商品画像：一番上の1枚のみ表示（他は非表示）
-   - 需要供給グラフ：上段の「商品情報」+「主要項目」の横幅に合わせる
+   - 商品画像/keepaは細め
+   - 主要項目は広め
+   - 主要項目は高さ固定＋中スクロール
    ※ ここ以外は一切変更しない
 ========================= */
 
 body.fourth-layout .layout4-grid{
   display:grid;
-  grid-template-columns: 420px 320px 1fr 1fr 280px;
+  /* 画像(細) / 商品情報 / 主要項目(広) / 主要項目(広) / カート */
+  grid-template-columns: 300px 320px 1.35fr 1.35fr 280px;
   grid-template-rows: auto auto;
   grid-template-areas:
     "image info center center cart"
@@ -653,13 +654,19 @@ body.fourth-layout .l4-block .head{
   color:#0f172a;
 }
 
-/* 商品画像：1枚だけ（上の1枚） */
+/* 商品画像：上の1枚だけ表示（列幅が細くなっても崩れない） */
 body.fourth-layout .l4-image .image-grid{
   display:grid;
   grid-template-columns: 1fr;
-  grid-auto-rows: 320px;
+  grid-auto-rows: 300px;
   gap: 0;
 }
+
+/* 複数画像がDOMにある想定で、1枚だけ残す */
+body.fourth-layout .l4-image .image-grid img{ display:none; }
+body.fourth-layout .l4-image .image-grid img.main{ display:block; }
+body.fourth-layout .l4-image .image-grid img:first-child{ display:block; }
+
 body.fourth-layout .l4-image .image-grid img{
   width:100%;
   height:100%;
@@ -669,44 +676,7 @@ body.fourth-layout .l4-image .image-grid img{
   background:#fff;
 }
 
-/* 既存で複数画像を出している場合は、上の1枚だけ残す */
-body.fourth-layout .l4-image .image-grid img{ display:none; }
-body.fourth-layout .l4-image .image-grid img.main{ display:block; }
-body.fourth-layout .l4-image .image-grid img:first-child{ display:block; }
-
-/* 商品情報：高さが暴れないように（中身はスクロール） */
-body.fourth-layout .l4-info .info-grid{
-  max-height: 320px;
-  overflow:auto;
-}
-
-/* 主要項目：カード表示（既存の見た目のまま） */
-body.fourth-layout .center-cards{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
-}
-body.fourth-layout .center-card{
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px;
-  background:#fff;
-}
-body.fourth-layout .center-card .label{
-  font-size:12px;
-  font-weight:900;
-  color:#475569;
-  margin-bottom:6px;
-}
-body.fourth-layout .center-card .value{
-  font-size:15px;
-  font-weight:1000;
-  color:#0f172a;
-  text-align:right;
-  word-break:break-word;
-}
-
-/* keepa（左下） */
+/* keepa（画像列に合わせる：列幅はgridで揃う） */
 body.fourth-layout .l4-keepa{
   background:#f3f4f6;
 }
@@ -723,7 +693,56 @@ body.fourth-layout .l4-keepa iframe{
   border:0;
 }
 
-/* 需要供給グラフ：横幅は info+center 分（grid-areaで確保済み） */
+/* 商品情報：高さを合わせて中だけスクロール（枠サイズ固定） */
+body.fourth-layout .l4-info .info-grid{
+  max-height: 300px;
+  overflow:auto;
+}
+
+/* =========================
+   主要項目（枠サイズ固定＋中スクロール）
+   - ここが今回の重要点
+========================= */
+
+/* 枠の高さを固定して、増えたら中をスクロール */
+body.fourth-layout .l4-center{
+  height: 300px;               /* ←枠のサイズは変えない */
+  display:flex;
+  flex-direction:column;
+}
+
+/* 主要項目カード群が増えたらここだけスクロール */
+body.fourth-layout .l4-center .center-cards{
+  flex:1;
+  overflow:auto;               /* ←増えたら下スクロール */
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  padding-right: 4px;          /* スクロールバーでガタつかないように */
+}
+
+body.fourth-layout .l4-center .center-card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+  background:#fff;
+}
+
+body.fourth-layout .l4-center .center-card .label{
+  font-size:12px;
+  font-weight:900;
+  color:#475569;
+  margin-bottom:6px;
+}
+body.fourth-layout .l4-center .center-card .value{
+  font-size:15px;
+  font-weight:1000;
+  color:#0f172a;
+  text-align:right;
+  word-break:break-word;
+}
+
+/* 需要供給グラフ（横幅は info+center 分：grid-areaで確保済み） */
 body.fourth-layout .l4-mes .mes-big{
   height: 260px;
   border-radius:14px;
@@ -778,7 +797,12 @@ body.fourth-layout .l4-buy .cart-btn{
   body.fourth-layout .l4-image .image-grid{
     grid-auto-rows: 280px;
   }
+
   body.fourth-layout .l4-info .info-grid{
     max-height: 280px;
+  }
+
+  body.fourth-layout .l4-center{
+    height: 280px;  /* スマホも枠固定＋中スクロール */
   }
 }
