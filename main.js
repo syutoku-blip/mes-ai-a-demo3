@@ -593,37 +593,6 @@ function buildCenterList(container, ctx, data) {
   });
 }
 
-// Layout4用：主要項目をカード表示（2列グリッド）
-function buildCenterCards(container, ctx, data) {
-  if (!container) return;
-  container.innerHTML = "";
-
-  zoneState.center.forEach((tok) => {
-    const v = resolveTokenValue(tok, ctx, data);
-
-    const tile = document.createElement("div");
-    tile.className = "center-card";
-
-    const label = document.createElement("div");
-    label.className = "label";
-    label.textContent = v.label;
-
-    const value = document.createElement("div");
-    value.className = "value";
-
-    if (v.kind === "tags") {
-      value.classList.add("v-tags");
-      value.innerHTML = v.html;
-    } else {
-      value.textContent = v.text ?? "－";
-    }
-
-    tile.appendChild(label);
-    tile.appendChild(value);
-    container.appendChild(tile);
-  });
-}
-
 function buildDetailTable(tableEl, ctx, data) {
   if (!tableEl) return;
   const theadRow = tableEl.querySelector("thead tr");
@@ -657,7 +626,6 @@ function buildDetailTable(tableEl, ctx, data) {
 
 function rerenderAllCards() {
   const isThird = document.body.classList.contains("third-layout");
-  const isFourth = document.body.classList.contains("fourth-layout");
 
   cardState.forEach((v) => {
     const asin = v.el.dataset.asin;
@@ -680,11 +648,7 @@ function rerenderAllCards() {
       buildInfoGrid(v.el.querySelector(".js-infoGrid"), ctx, v.data);
     }
 
-    if (isFourth) {
-      buildCenterCards(v.el.querySelector(".js-centerCards"), ctx, v.data);
-    } else {
-      buildCenterList(v.el.querySelector(".js-center"), ctx, v.data);
-    }
+    buildCenterList(v.el.querySelector(".js-center"), ctx, v.data);
     buildDetailTable(v.el.querySelector(".js-detailTable"), ctx, v.data);
   });
 }
@@ -771,7 +735,6 @@ function createProductCard(asin, data) {
 
   const isAltLayout = document.body.classList.contains("alt-layout");
   const isThirdLayout = document.body.classList.contains("third-layout");
-  const isFourthLayout = document.body.classList.contains("fourth-layout");
 
   if (isThirdLayout) {
     card.innerHTML = `
@@ -837,92 +800,6 @@ function createProductCard(asin, data) {
 
         <!-- 需要供給（大） -->
         <div class="l3-mes l3-block">
-          <div class="head">需要供給グラフ（180日）</div>
-
-          <div class="graph-options js-graphOptions" style="margin-bottom:10px;">
-            <label><input type="checkbox" class="js-chkDS" checked />《需要＆供給》</label>
-            <label><input type="checkbox" class="js-chkSP" />《供給＆価格》</label>
-          </div>
-
-          <div class="mes-big">
-            <canvas class="js-chart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="detail-wrap">
-        <div class="detail-head"><div class="t">その他項目</div></div>
-        <div class="detail-scroll">
-          <table class="detail-table js-detailTable">
-            <thead><tr></tr></thead>
-            <tbody><tr></tr></tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  } else if (isFourthLayout) {
-    // Layout4（画像2列 + 主要項目カード + keepa小 + 需要供給大 + 右カート）
-    const imgSrc = data["商品画像"] || "";
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="title">ASIN: ${asin}</div>
-        <button class="remove" type="button">この行を削除</button>
-      </div>
-
-      <div class="layout4-grid">
-        <!-- 商品画像 -->
-        <div class="l4-image l4-block">
-          <div class="head">商品画像</div>
-          <div class="image-grid">
-            <img class="main" src="${imgSrc}" alt="商品画像" onerror="this.style.display='none';" />
-            <img class="thumb" src="${imgSrc}" alt="商品画像" onerror="this.style.display='none';" />
-            <img class="thumb" src="${imgSrc}" alt="商品画像" onerror="this.style.display='none';" />
-            <img class="thumb" src="${imgSrc}" alt="商品画像" onerror="this.style.display='none';" />
-          </div>
-        </div>
-
-        <!-- 商品情報 -->
-        <div class="l4-info l4-block">
-          <div class="head">商品情報</div>
-          <div class="info-grid js-infoGrid"></div>
-        </div>
-
-        <!-- 主要項目 -->
-        <div class="l4-center l4-block">
-          <div class="head">主要項目</div>
-          <div class="center-cards js-centerCards"></div>
-        </div>
-
-        <!-- カート（右縦） -->
-        <div class="l4-buy">
-          <div class="buy-title">数量</div>
-          <select class="js-qty">
-            <option value="1" selected>1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-
-          <div class="buy-title" style="margin-top:10px;">販売価格（$）</div>
-          <input class="js-sell" type="number" step="0.01" placeholder="例: 39.99" />
-
-          <div class="buy-title" style="margin-top:10px;">仕入れ額（￥）</div>
-          <input class="js-cost" type="number" step="1" placeholder="例: 3700" />
-
-          <button class="cart-btn js-addCart" type="button" style="margin-top:12px;">カートに入れる</button>
-        </div>
-
-        <!-- keepa（小） -->
-        <div class="l4-keepa l4-block">
-          <div class="head">keepaグラフ</div>
-          <div class="keepa-mini">
-            <iframe class="js-keepaFrame" src="" loading="lazy"></iframe>
-          </div>
-        </div>
-
-        <!-- 需要供給（大） -->
-        <div class="l4-mes l4-block">
           <div class="head">需要供給グラフ（180日）</div>
 
           <div class="graph-options js-graphOptions" style="margin-bottom:10px;">
@@ -1156,11 +1033,7 @@ function createProductCard(asin, data) {
   }
 
   // center / table
-  if (isFourthLayout) {
-    buildCenterCards(card.querySelector(".js-centerCards"), ctx, data);
-  } else {
-    buildCenterList(card.querySelector(".js-center"), ctx, data);
-  }
+  buildCenterList(card.querySelector(".js-center"), ctx, data);
   buildDetailTable(card.querySelector(".js-detailTable"), ctx, data);
 
   // chart
@@ -1180,7 +1053,7 @@ function createProductCard(asin, data) {
   if (keepaFrame) keepaFrame.src = `https://keepa.com/#!product/1-${asin}`;
 
   // 通常レイアウトのみ：トグル維持
-  if (!isAltLayout && !isThirdLayout && !isFourthLayout) {
+  if (!isAltLayout && !isThirdLayout) {
     const keepaWrap = card.querySelector(".js-keepaWrap");
     const mesWrap = card.querySelector(".js-mesWrap");
     const graphOptions = card.querySelector(".js-graphOptions");
