@@ -524,31 +524,29 @@ a{ color:inherit; }
   overflow:hidden;
 }
 .graph-head{
-  padding:10px 12px;
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  gap:10px;
+  align-items:center;
+  padding:10px 12px;
   border-bottom:1px solid rgba(229,231,235,.8);
-  background: rgba(91,92,255,.06);
+  background: rgba(15,23,42,.02);
 }
 .graph-title{
   font-size:13px;
   font-weight:900;
 }
-
 .switch{
   display:flex;
-  gap:8px;
+  gap:6px;
 }
 .switch button{
   height:30px;
-  padding:0 10px;
   border-radius:999px;
   border:1px solid var(--line);
   background:#fff;
+  padding:0 10px;
+  font-size:11px;
   font-weight:900;
-  font-size:12px;
   cursor:pointer;
 }
 .switch button.active{
@@ -664,11 +662,15 @@ a{ color:inherit; }
   gap: 14px;
   align-items:stretch;
 }
+
+/* ★修正：左ブロックを「画像 → 商品情報」の縦積みにする（画像の配置に合わせる） */
 .alt-layout .alt-left{
   display:grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
   gap: 12px;
 }
+
 .alt-layout .alt-image{ padding:10px; }
 .alt-layout .alt-image img{ height:260px; }
 .alt-layout .alt-info{ padding:10px; }
