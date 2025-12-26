@@ -781,10 +781,10 @@ function rerenderAllCards() {
 function renderChart(canvas) {
   const labels = Array.from({ length: 180 }, (_, i) => `${180 - i}日`);
 
-  // ▼需要・供給っぽい「相関のある」ダミー生成（Keepa風の動き）
+  // ▼Keepaっぽい「相関のある」ダミー生成（需要・供給・価格の動き）
   // ルール：
-  // - ランキングが上がる（数値が大きくなる想定）→ セラー増 → 価格は下がりやすい
-  // - ランキングが下がる（数値が小さくなる想定）→ セラー減 → 少し遅れて価格が上がりやすい
+  // - ランキングが上がる（数値が大きくなる）→ セラー増 → 価格は下がりやすい
+  // - ランキングが下がる（数値が小さくなる）→ セラー減 → 少し遅れて価格が上がりやすい
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rnd = (a, b) => a + Math.random() * (b - a);
 
@@ -799,15 +799,15 @@ function renderChart(canvas) {
   const sellers = [];
   const price = [];
 
-  // ランキング：ランダムウォーク + トレンド切替（現実っぽい波）
+  // rank: ランダムウォーク + たまにトレンド切替
   let r = rnd(56000, 64000);
   let drift = rnd(-220, 220);
-  let driftLeft = Math.floor(rnd(16, 34)); // 16〜33日おきにトレンド変更
+  let driftLeft = Math.floor(rnd(16, 34));
 
-  // セラー：ランキングに追随（少し遅れる/段階っぽくなる）
+  // sellers: rankに追随（少し遅れ＋段階感）
   let s = rnd(7, 10);
 
-  // 価格：セラー増で下がる／セラー減で遅れて上がる（段階的）
+  // price: sellers増で下がり、sellers減で遅れて上がる
   let p = rnd(24.5, 27.5);
 
   for (let i = 0; i < labels.length; i++) {
@@ -817,7 +817,7 @@ function renderChart(canvas) {
       drift = rnd(-260, 260);
       driftLeft = Math.floor(rnd(16, 34));
     }
-    const noiseR = (Math.random() - 0.5) * 900; // 日次ノイズ
+    const noiseR = (Math.random() - 0.5) * 900;
     r = clamp(r + drift + noiseR, R_MIN, R_MAX);
     rank.push(Math.round(r));
 
@@ -825,21 +825,24 @@ function renderChart(canvas) {
     const r01 = (r - R_MIN) / (R_MAX - R_MIN);
 
     // --- sellers ---
-    const sTarget = S_MIN + r01 * (S_MAX - S_MIN); // ランク↑でセラー↑
+    const sTarget = S_MIN + r01 * (S_MAX - S_MIN);
     const noiseS = (Math.random() - 0.5) * 0.9;
-    // 追随の「遅れ」と「段階感」：ゆっくり寄せる + 小さめノイズ
     s = clamp(s * 0.78 + sTarget * 0.22 + noiseS, 1, 25);
-    sellers.push(Math.round(s));
+
+    // Keepaっぽい階段感（0.5刻み）
+    const sStep = Math.round(s * 2) / 2;
+    sellers.push(sStep);
 
     // --- price ---
-    // セラー減の“後追い”で価格が上がりやすい（lagで表現）
+    // セラー減の“後追い”で価格が上がりやすい（4日遅れ）
     const lagIdx = Math.max(0, i - 4);
-    const sLag = sellers[lagIdx] ?? Math.round(s);
-    const s01 = clamp((Math.round(s) - S_MIN) / (S_MAX - S_MIN), 0, 1);
+    const sLag = sellers[lagIdx] ?? sStep;
+
+    const s01 = clamp((sStep - S_MIN) / (S_MAX - S_MIN), 0, 1);
     const sLag01 = clamp((sLag - S_MIN) / (S_MAX - S_MIN), 0, 1);
 
-    // ベースは「ランク↑で価格↓」「セラー↑で価格↓」
-    // さらに「セラーが減ってきたら（lagで）少し遅れて価格↑」
+    // ベース：ランク↑で価格↓／セラー↑で価格↓
+    // 追加：セラーが減ってきたら（遅れで）価格↑
     const pTarget =
       26.2
       - r01 * 2.6
@@ -847,9 +850,11 @@ function renderChart(canvas) {
       + (1 - sLag01) * 2.0;
 
     const noiseP = (Math.random() - 0.5) * 0.35;
-    // 価格もゆっくり寄せる（Keepaの“じわっと”感）
     p = clamp(p * 0.82 + (pTarget + noiseP) * 0.18, P_MIN, P_MAX);
-    price.push(Math.round(p * 10) / 10);
+
+    // Keepaっぽい階段感（0.1刻み）
+    const pStep = Math.round(p * 10) / 10;
+    price.push(pStep);
   }
 
   const chart = new Chart(canvas, {
@@ -868,9 +873,32 @@ function renderChart(canvas) {
       interaction: { mode: "index", intersect: false },
       plugins: { legend: { display: true } },
       scales: {
-        y: { position: "left" },
-        y1: { position: "right", grid: { drawOnChartArea: false } },
-        y2: { position: "right", grid: { drawOnChartArea: false } }
+        x: {
+          ticks: {
+            // 10日ごとに表示（見やすさ優先）
+            callback: function (val, idx) {
+              return (idx % 10 === 0) ? this.getLabelForValue(val) : "";
+            }
+          }
+        },
+        y: {
+          position: "left",
+          min: R_MIN,
+          max: R_MAX
+        },
+        y1: {
+          position: "right",
+          min: S_MIN,
+          max: S_MAX,
+          grid: { drawOnChartArea: false }
+        },
+        y2: {
+          position: "right",
+          min: P_MIN,
+          max: P_MAX,
+          grid: { drawOnChartArea: false },
+          offset: true
+        }
       }
     }
   });
